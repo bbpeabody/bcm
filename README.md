@@ -8,7 +8,7 @@
    vagrant plugin install vagrant-vbguest
    ```
 5. Access to Broadcom Git/Gerrit. See instructions here -
-   http://confluence.broadcom.com/pages/viewpage.action?spaceKey=CCXSW&title=Git-GerritTutorial#Git-GerritTutorial-GettingAccess
+   http://confluence.broadcom.com/pages/viewpage.action?spaceKey=CCXSW&title=Git-Gerrit+Tutorial#Git-GerritTutorial-GettingAccess
 6. SSH key pair
    If you followed the Git/Gerrit guide above, you should have used this command on your Mac -
    ```
