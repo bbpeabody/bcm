@@ -1,0 +1,98 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+# This will provision a guest virtual machine suitable for building the Thor firmware.
+#
+# Prerequisites
+# =============
+# 1. MacOS host
+# 2. Install VirtualBox from web
+# 3. Install Vagrant from web
+# 4. Install Vagrant VirtualBox Guest Additions plugin -
+#    vagrant plugin install vagrant-vbguest
+# 5. Access to Broadcom Git/Gerrit. See instructions here -
+#    http://confluence.broadcom.com/pages/viewpage.action?spaceKey=CCXSW&title=Git-Gerrit+Tutorial#Git-GerritTutorial-GettingAccess
+# 6. SSH key pair
+#    If you followed the Git/Gerrit guide above, you should have used this command on
+#    your Mac -
+#    ssh-keygen -t rsa -m PEM
+#    Your private key should be name ~/.ssh/id_rsa
+#    This key will be used for git, gerrit, and VDI.
+# 7. A working VDI (Engineering Virtual Desktop Instance).
+#    Bootstrap script will use your VDI to retrieve required build tools.  Make sure
+#    you can build the firmware on your VDI before attempting to create VM.
+#    VDI Request Portal -
+#    https://unixrnd.sjs.avagotech.net/tools/vdi/request.php
+# 8. Passwordless access to your VDI.
+#    Once you have your SSH key pair, use this to copy public key to VDI -
+#    ssh-copy-id <okta_user>@<vdi_url>
+#    Example:  ssh-copy-id bp892475@lvnvda3087.lvn.broadcom.net
+#    The vagrant bootstrap script needs passwordless access to your VDI so it can retrieve
+#    build tools.
+# 9. SRT/CRT CRID 1 signing priveleges
+#    Send email to alex.barba@broadcom.com to request signing priveleges for 
+#    THOR-SD-BROADCOM-CID-0x60000001-SRT (+CRT).  CC your manager for approval.
+#
+# 
+# Instructions
+# ============
+# 1. Satisfy all prerequistes above
+# 2. Clone the netxtreme repo to your home directory on the host
+#    mkdir ~/git
+#    cd ~/git
+#    git clone svcccxswgit@git-ccxsw.irv.broadcom.com:netxtreme
+#    cd netxtreme
+#    git checkout int_nxt
+#
+#
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  config.vm.hostname = "bldr"
+  config.vm.box = "centos/7"
+  config.vm.box_check_update = false
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "bldr"
+    vb.cpus = 8
+    vb.memory = 8192
+
+    # Use virtio for best performance. If vagrant up hangs, comment this line.
+    vb.default_nic_type = "virtio"
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+  end
+  
+  # vagrant-vbguest plugin automatically install the host's VirtualBox Guest Additions 
+  # on the guest system.  Installation - vagrant plugin install vagrant-vbguest
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = true
+  end
+
+  # Configure static IP on private host NAT network
+  config.vm.network "private_network", ip: "192.168.33.10"
+  
+  # This will configure the nfsd server on the host and mount the nfs share on the guest
+  # Do not use UDP transport. Make hangs whe you try to use UDP.
+  config.vm.synced_folder "~/git", "/git", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
+  
+  # Set the guest time to match the host.
+  config.vm.provision "shell", inline: "sudo rm /etc/localtime && sudo ln -s /usr/share/zoneinfo/America/New_York /etc/localtime", run: "always"
+
+  # All provisioning below is only run once
+  # Copy some config files to the guest
+  config.vm.provision "file", source: "zshrc", destination: ".zshrc"
+  config.vm.provision "file", source: "vimrc", destination: ".vimrc"
+  config.vm.provision "file", source: "p10k.zsh", destination: ".p10k.zsh"
+  config.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
+
+  # Copy ssh key to VM
+  config.vm.provision "file", source: "~/.ssh/id_rsa", destination: ".ssh/id_rsa"
+  
+  # Run the bootstrap script.  This only runs once after the first call to vagrant up
+  # after a vagrant destroy.  It can be run again using --provision option.
+  config.vm.provision "shell", path: "bootstrap.sh", env: { "USER" => "bp892475", "VDI" => "lvnvda3087.lvn.broadcom.net" }
+end

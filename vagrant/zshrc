@@ -1,0 +1,33 @@
+# Lines configured by zsh-newuser-install
+HISTFILE=~/.histfile
+HISTSIZE=1000
+SAVEHIST=1000
+setopt appendhistory
+bindkey -v
+# End of lines configured by zsh-newuser-install
+
+# The following lines were added by compinstall
+zstyle :compinstall filename '/home/vagrant/.zshrc'
+
+autoload -Uz compinit
+compinit
+# End of lines added by compinstall
+
+# Enable powerlevel10k theme
+source ~/powerlevel10k/powerlevel10k.zsh-theme
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+export PATH="./:$PATH"
+
+alias cdthor="cd /git/netxtreme/main/Cumulus/firmware/THOR"
+alias tclean="rm -rf obj;rm -rf THOR*"
+alias tcleanall="rm -rf obj;rm -rf THOR*;make clobber"
+alias tbuild="./make_thor_pkg.sh CRID=0001 RV=B debug VERBOSE=no < ~/sign.txt"
+alias gits='git status --ignore-submodules -uno'
+
+function mk_sign {
+    local -r pw=${1:?"Specify a password"}
+    echo $pw > ~/sign.txt
+    chmod 600 ~/sign.txt
+}
