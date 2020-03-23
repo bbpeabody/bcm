@@ -37,24 +37,34 @@
 # Instructions
 # ============
 # 1. Satisfy all prerequistes above
+# 2. Create local .gitconfig
+#
 # 2. Clone the netxtreme repo to your home directory on the host
 #    mkdir ~/git
 #    cd ~/git
 #    git clone svcccxswgit@git-ccxsw.irv.broadcom.com:netxtreme
 #    cd netxtreme
 #    git checkout int_nxt
+# 3. Set gerrit as the upstream origin (push)
+# 4. Change the constants USER and VDI to your Okta userid and VDI URL
+# 5. 
 #
-#
+
+# Set these to your username and VDI URL
+USER = "bp892475"
+VDI = "lvnvda3087.lvn.broadcom.net"
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
+  # Create a centos 7 machine named "bldr"
   config.vm.hostname = "bldr"
   config.vm.box = "centos/7"
   config.vm.box_check_update = false
 
+  # Use VirtualBox as the provider(hypervisor).  Allocate 8 CPU cores and 8G RAM.
   config.vm.provider "virtualbox" do |vb|
     vb.name = "bldr"
     vb.cpus = 8
@@ -72,7 +82,9 @@ Vagrant.configure("2") do |config|
     config.vbguest.auto_update = true
   end
 
-  # Configure static IP on private host NAT network
+  # Configure static IP on private host NAT network.  This can be whatever you want as long
+  # as it's a non-routable IP - i.e. 192.168.0.0/16.  This IP will only be visible to the 
+  # host. VirtualBox provides a private NAT network.
   config.vm.network "private_network", ip: "192.168.33.10"
   
   # This will configure the nfsd server on the host and mount the nfs share on the guest
@@ -82,11 +94,15 @@ Vagrant.configure("2") do |config|
   # Set the guest time to match the host.
   config.vm.provision "shell", inline: "sudo rm /etc/localtime && sudo ln -s /usr/share/zoneinfo/America/New_York /etc/localtime", run: "always"
 
-  # All provisioning below is only run once
+  # All provisioning below is only run once.  It may be run again using --provision option
   # Copy some config files to the guest
+  # ZSH shell configuration
   config.vm.provision "file", source: "zshrc", destination: ".zshrc"
+  # VIM editor configuration
   config.vm.provision "file", source: "vimrc", destination: ".vimrc"
+  # Powerlevel10k ZSH plugin configuration
   config.vm.provision "file", source: "p10k.zsh", destination: ".p10k.zsh"
+  # Local git configuration.  At a minimum needs your name and email configured
   config.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
 
   # Copy ssh key to VM
@@ -94,5 +110,5 @@ Vagrant.configure("2") do |config|
   
   # Run the bootstrap script.  This only runs once after the first call to vagrant up
   # after a vagrant destroy.  It can be run again using --provision option.
-  config.vm.provision "shell", path: "bootstrap.sh", env: { "USER" => "bp892475", "VDI" => "lvnvda3087.lvn.broadcom.net" }
+  config.vm.provision "shell", path: "bootstrap.sh", env: { "USER" => USER, "VDI" => VDI }
 end

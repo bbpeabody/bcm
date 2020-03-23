@@ -12,10 +12,33 @@ if ! id -u $USER; then
 fi
 
 # Install tools required for build
+echo "Archiving tools on $VDI (this will take a while)"
+# SSH to VDI and tar/gzip the tools required
+ssh -o StrictHostKeyChecking=no \
+    -i /home/vagrant/.ssh/id_rsa \
+    $USER@$VDI 'tar -czf /tmp/tools.tgz /projects/ccxsw_tools/mentor_graphics/mgc-2018.070 /projects/ccxsw_tools/sbl_tools'
+
+# SCP the tools
+echo "Copying tools from $VDI (this will take a while)"
+scp -o StrictHostKeyChecking=no \
+    -i /home/vagrant/.ssh/id_rsa \
+    $USER@$VDI:/tmp/tools.tgz /tmp/tools.tgz
+# Untar the files
+echo "Installing tools (this will take a while)"
 cd /
-tar -xzf /vagrant/mentor_graphics.tgz
-tar -xzf /vagrant/sbl_tools.tgz
+tar -xzf /tmp/tools.tgz
 chown --recursive vagrant:vagrant /projects
+# Cleanup local
+rm /tmp/tools.tgz
+# Cleanup remote
+ssh -o StrictHostKeyChecking=no \
+    -i /home/vagrant/.ssh/id_rsa \
+    $USER@$VDI 'rm /tmp/tools.tgz'
+
+#cd /
+#tar -xzf /vagrant/mentor_graphics.tgz
+#tar -xzf /vagrant/sbl_tools.tgz
+#chown --recursive vagrant:vagrant /projects
 
 # Update all packages
 yum update -y
