@@ -71,7 +71,7 @@
    ```
 1. Bring up the Vagrant VM. This will take a while the first time. Subsequent `vagrant up` commands will be quick. The first time this command is run:
    * Machine is created in VirtualBox
-   * CentOS7 is insalled
+   * CentOS7 is installed
    * Packages are updated and new packages installed
    * Broadcom tools are copied from VDI to the new machine
    ```
@@ -92,4 +92,15 @@
    cdthor
    tcleanall
    tbuild
+   ```
+1. Useful vagrant commands
+   ```
+   vagrant --help
+   vagrant up
+   vagrant reload (reboots the machine)
+   vagrant destroy (Warning: this deletes the machine and everything on it)
+   vagrant halt
+   vagrant suspend
+   vagrant resume
+   vagrant ssh
    ```
