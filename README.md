@@ -44,7 +44,7 @@
    ```
    * Add name to global `.gitconfig`
    ```
-   ❯ git config --global user.name "Brad Peabody"   mkdir ~/git
+   ❯ git config --global user.name "Brad Peabody"
    ```
    * Add email to global `.gitconfig`
    ```
