@@ -30,7 +30,7 @@
    
 ## Instructions
 1. Satisfy all prerequistes above
-1. Create global `.gitconfig`.  At a minimum, your `.gitconfig` should have your name and Broadcom email address.
+1. Create global `.gitconfig`.  At a minimum, your `.gitconfig` should have your name and Broadcom email address. This will create `~/.gitconfig`.  This file will be copied to the new Vagrant VM when it is brought up for the first time.
    * Show global `.gitconfig`
    ```
    ❯ git config --global --list
