@@ -1,6 +1,13 @@
 # Creating a local VM build machine for Thor
+## References
+* [CCX Firmware Team OnBoarding](https://docs.google.com/document/d/15jdL361R0cant69XORYLjb7aG75idEfXBIMwFsX2o3M/edit#heading=h.3ndlkh5q3sci)
+* [Engineering Virtual Desktop Instance (VDI)](https://sites.google.com/a/broadcom.com/i-t-global-rnd-services/home/unix/vdi)
+* [Linux (VDI) Build Process](https://docs.google.com/document/d/1oI2yavh8tIoeKwNg7VZOemNTiE7XfOW6zvX8ploBBOU/edit#heading=h.9c19pik1d7ya)
+* [Git-Gerrit Tutorial](http://confluence.broadcom.com/pages/viewpage.action?spaceKey=CCXSW&title=Git-Gerrit+Tutorial)
+* [Local Builds](https://docs.google.com/document/d/1ZbmxJGbDqog0OkuCPEiXdKKLtJC6OIJlmzclZP1GqVU/edit#heading=h.h9x9x4f473xn)
+
 ## Prerequisites
-1. MacOS host
+1. MacOS host.  With some modification to the `Vagrantfile`, this procedure could be adapted to Windows. I've only tested it on MacOS.
 1. Install [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 1. Install [Vagrant](https://www.vagrantup.com/downloads.html)
 1. Install Vagrant VirtualBox Guest Additions plugin from shell
