@@ -64,7 +64,8 @@ yum install -y \
     perl-WWW-Mechanize \
     sudo \
     tcl-devel \
-    npm
+    npm \
+    python-pip
 
 yum clean all
 
@@ -91,8 +92,8 @@ usermod --shell /bin/zsh vagrant
 # Get powerlevel10k source from github
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/vagrant/powerlevel10k
 
-# Add USER to .zshrc file.  Signing script uses this variable.
-echo "Adding USER=$USER to .zshrc"
-echo export USER=$USER >> /home/vagrant/.zshrc
+# Add USER to .zshenv file.  Signing script uses this variable.
+echo "Adding USER=$USER to .zshenv"
+echo export USER=$USER >> /home/vagrant/.zshenv
 
 echo "Bootstrap Complete!"

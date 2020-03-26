@@ -43,7 +43,8 @@ Vagrant.configure("2") do |config|
   # as it's a non-routable IP - i.e. 192.168.0.0/16.  This IP will only be visible to the 
   # host. VirtualBox provides a private NAT network.
   config.vm.network "private_network", ip: "192.168.33.10"
-  
+  config.ssh.forward_agent = true
+
   # This will configure the nfsd server on the host and mount the nfs share on the guest
   # Do not use UDP transport. Make hangs whe you try to use UDP.
   config.vm.synced_folder "~/git", "/git", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
@@ -53,8 +54,9 @@ Vagrant.configure("2") do |config|
 
   # All provisioning below is only run once.  It may be run again using --provision option
   # Copy some config files to the guest
-  # ZSH shell configuration
+  # ZSH shell/environment configuration
   config.vm.provision "file", source: "zshrc", destination: ".zshrc"
+  config.vm.provision "file", source: "zshenv", destination: ".zshenv"
   # VIM editor configuration
   config.vm.provision "file", source: "vimrc", destination: ".vimrc"
   # Powerlevel10k ZSH plugin configuration
