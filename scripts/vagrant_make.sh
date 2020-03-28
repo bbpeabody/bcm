@@ -1,42 +1,74 @@
 #!/bin/bash
 
-# Check number of args
-usage="usage: $0 [debug|release|signed-debug|signed-release|clean]"
+pushd 2> /dev/null
 
-if [ "$#" -ne 1 ]; then
-    echo "$0 expects exactly 1 parameter"
-    echo $usage
-    exit 1
-fi
+usage="usage: $0 {-c|--cov-build} [debug|release|signed-debug|signed-release|clean]"
+build_dir='/git/netxtreme/main/Cumulus/firmware/THOR'
+cov=false
+PATH=/usr/bin:/usr/local/bin:/usr/local/bin:$PATH
 
-cmd='cd /git/netxtreme/main/Cumulus/firmware/THOR'
+PARAMS=""
+while (( "$#" )); do
+  case "$1" in
+    -c|--cov-build)
+      cov=true
+      shift 1
+      ;;
+    --) # end argument parsing
+      shift
+      break
+      ;;
+    -*|--*=) # unsupported flags
+      echo $usage
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+
+eval set -- "$PARAMS"
 
 case $1 in
     debug)
-        cmd="${cmd} && time ./make_thor_pkg.sh RV=B debug"
+        cmd="./make_thor_pkg.sh RV=B debug"
         ;;
     release)
-        cmd="${cmd} && time ./make_thor_pkg.sh RV=B release"
+        cmd="./make_thor_pkg.sh RV=B release"
         ;;
     signed-debug)
-        cmd="${cmd} && time ./make_thor_pkg.sh CRID=0001 RV=B debug < ~/sign.txt"
+        cmd="./make_thor_pkg.sh CRID=0001 RV=B debug < ~/sign.txt"
         ;;
     signed-release)
-        cmd="${cmd} && time ./make_thor_pkg.sh CRID=0001 RV=B release < ~/sign.txt"
+        cmd="./make_thor_pkg.sh CRID=0001 RV=B release < ~/sign.txt"
         ;;
     clean)
-        cmd="${cmd} && rm -rf obj THOR* && make clobber"
+        if [ "$cov" = true ] ; then
+            echo $usage
+            echo "Error: -c|--cov-build not valid with clean" >&2
+            exit 1
+        fi
+        cmd="rm -rf obj THOR* coverity; make clobber"
         ;;
     *)
-        echo "Invalid parameter: $1"
+        echo "Invalid build target: $1"
         echo $usage
         exit 1
         ;;
 esac
 
-pushd 2> /dev/null
 
-PATH=/usr/local/bin:/usr/local/bin:$PATH
+if [ "$cov" = true ] ; then
+    # Do a build and generate coverity meta-data
+    cmd="cd $build_dir && cov-configure --config coverity/coverity_config.xml --compiler arm-none-eabi-gcc --template && cov-build --preprocess-next --dir coverity --config ./coverity/coverity_config.xml $cmd"
+else
+    cmd="cd $build_dir && $cmd"
+fi
+
+cmd="time sh -c '${cmd}'"
 
 # Make sure vagrant machine is up
 cd ~/git/bcm/vagrant

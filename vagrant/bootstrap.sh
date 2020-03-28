@@ -21,7 +21,8 @@ ssh -o StrictHostKeyChecking=no \
     'tar -czf /tmp/tools.tgz \
         /projects/ccxsw_tools/mentor_graphics/mgc-2018.070 \
         /projects/ccxsw_tools/sbl_tools \
-        /projects/ccxsw_tools/contrib'
+        /projects/ccxsw_tools/contrib \
+        /projects/ccxsw_tools/coverity/2019.03/Linux-64'
 
 # SCP the tools
 echo "Copying tools from $VDI (this will take a while)"
@@ -65,7 +66,9 @@ yum install -y \
     sudo \
     tcl-devel \
     npm \
-    python-pip
+    python-pip \
+    xauth \
+    firefox
 
 yum clean all
 

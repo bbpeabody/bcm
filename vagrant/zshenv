@@ -1,1 +1,1 @@
-export PATH="./:$PATH"
+export PATH="./:$PATH:/projects/ccxsw_tools/coverity/2019.03/Linux-64/bin/"
