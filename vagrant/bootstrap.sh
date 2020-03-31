@@ -22,7 +22,8 @@ ssh -o StrictHostKeyChecking=no \
         /projects/ccxsw_tools/mentor_graphics/mgc-2018.070 \
         /projects/ccxsw_tools/sbl_tools \
         /projects/ccxsw_tools/contrib \
-        /projects/ccxsw_tools/coverity/2019.03/Linux-64'
+        /projects/ccxsw_tools/coverity/2019.03/Linux-64 \
+	/projects/ccxsw_tools/coverity/cov-analysis-linux64-2019.03'
 
 # SCP the tools
 echo "Copying tools from $VDI (this will take a while)"

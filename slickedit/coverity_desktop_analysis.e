@@ -31,11 +31,11 @@ static void getOpenFilenameList(_str (&bufNames)[])
    p_window_id = orig_wid;
 }
 
+
 _command void covdesktop() name_info(',' VSARG2_MACRO)
 {
    int i = 0, p = 0;
    _str filelist = "", cmd = "";
-   //message("Hello World");
    getOpenFilenameList(auto bufNames);
    for (i = 0; i < bufNames._length(); i++) {
       p = pos('/Users/bpeabody/git/netxtreme/', bufNames[i]);
@@ -43,12 +43,33 @@ _command void covdesktop() name_info(',' VSARG2_MACRO)
          filename = stranslate(bufNames[i], "/git/netxtreme/", "/Users/bpeabody/git/netxtreme/");
          filelist = filelist :+ filename :+ " ";
       }
-      //messageNwait(bufNames[i]);
    }
-   //messageNwait(filelist);
-   cmd = '/Users/bpeabody/git/bcm/scripts/vagrant_cov_desktop.sh ' :+ filelist;
-   execute('clear-pbuffer');
-   concur_command(cmd,false,true,false,false);
+   reset_next_error();
+   clear_all_error_markers();
+   clear_pbuffer();
+   activate_build();
+   if (filelist == "") {
+      msg := "No source files are open.  This command only analyzes open buffers."
+      concur_command('echo ' :+ msg);
+      message(msg);
+   } else {
+      cmd = '/Users/bpeabody/git/bcm/scripts/vagrant_cov_desktop.sh ' :+ filelist :+ ';/Applications/SlickEditPro2019.app/Contents/MacOS/vs "-#covdesktop_done"';
+      concur_command(cmd,false,true,false,false);
+   }
+}
 
+_command void covdesktop_done() name_info(',' VSARG2_MACRO)
+{
+   set_error_markers();
+   refresh('A');
+   //maybe goto 1st error
+   if ( next_error() ) {
+      // or not ..
+      bottom_of_window();
+      cursor_data();
+      _beep();
+   } else {
+      activate_messages();
+   }
 }
 

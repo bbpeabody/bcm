@@ -1,1 +1,1 @@
-export PATH="./:$PATH:/projects/ccxsw_tools/coverity/2019.03/Linux-64/bin/"
+export PATH="./:$PATH:/projects/ccxsw_tools/coverity/2019.03/cov-analysis-linux64-2019.03/bin"
