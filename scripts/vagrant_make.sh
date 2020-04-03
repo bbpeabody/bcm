@@ -75,6 +75,6 @@ cd ~/git/bcm/vagrant
 vagrant status | grep running &> /dev/null || vagrant up
 
 # SSH to vagrant machine and make THOR
-ssh -p 2222 -i ~/git/bcm/vagrant/.vagrant/machines/bldr/virtualbox/private_key vagrant@localhost "$cmd"
+cd ~/git/bcm/vagrant && vagrant ssh -- "$cmd"
 
 popd 2> /dev/null
