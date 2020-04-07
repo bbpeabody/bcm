@@ -34,16 +34,16 @@ eval set -- "$PARAMS"
 
 case $1 in
     debug)
-        cmd="./make_thor_pkg.sh RV=B debug"
+        cmd="'./make_thor_pkg.sh RV=B debug'"
         ;;
     release)
-        cmd="./make_thor_pkg.sh RV=B release"
+        cmd="'./make_thor_pkg.sh RV=B release'"
         ;;
     signed-debug)
-        cmd="./make_thor_pkg.sh CRID=0001 RV=B debug < ~/sign.txt"
+        cmd="'./make_thor_pkg.sh CRID=0001 RV=B debug' < ~/sign.txt"
         ;;
     signed-release)
-        cmd="./make_thor_pkg.sh CRID=0001 RV=B release < ~/sign.txt"
+        cmd="'./make_thor_pkg.sh CRID=0001 RV=B release' < ~/sign.txt"
         ;;
     clean)
         if [ "$cov" = true ] ; then
@@ -51,7 +51,8 @@ case $1 in
             echo "Error: -c|--cov-build not valid with clean" >&2
             exit 1
         fi
-        cmd="rm -rf obj THOR* coverity; make clobber"
+        cmd="./cov clean"
+        #cmd="rm -rf obj THOR* coverity; make clobber"
         ;;
     *)
         echo "Invalid build target: $1"
@@ -63,12 +64,13 @@ esac
 
 if [ "$cov" = true ] ; then
     # Do a build and generate coverity meta-data
-    cmd="cd $build_dir && cov-configure --config coverity/coverity_config.xml --compiler arm-none-eabi-gcc --template && cov-build --preprocess-next --dir coverity --config ./coverity/coverity_config.xml $cmd"
+    #cmd="cd $build_dir && cov-configure --config coverity/coverity_config.xml --compiler arm-none-eabi-gcc --template && cov-build --preprocess-next --dir coverity --config ./coverity/coverity_config.xml $cmd"
+    cmd="cd $build_dir && ./cov build $cmd"
 else
     cmd="cd $build_dir && $cmd"
 fi
 
-cmd="time sh -c '${cmd}'"
+cmd="time sh -c \"${cmd}\""
 
 # Make sure vagrant machine is up
 cd ~/git/bcm/vagrant

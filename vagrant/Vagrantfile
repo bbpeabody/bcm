@@ -48,6 +48,11 @@ Vagrant.configure("2") do |config|
   # This will configure the nfsd server on the host and mount the nfs share on the guest
   # Do not use UDP transport. Make hangs whe you try to use UDP.
   config.vm.synced_folder "~/git", "/git", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
+  # MacOS protects the ~/Downloads folder.  In order for the NFS daemon to access it, you need
+  # to System Preferences > Security & Privacy > Privacy > Full Disk Access.  Click on the plus
+  # sign to add a program.  Navigate to /sbin/nfsd (cmd+shift+. to see hidden files and folders).
+  # Files in ~/Downloads should now show up at /downloads on vagrant machine.
+  config.vm.synced_folder "~/Downloads", "/downloads", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
   
   # Set the guest time to match the host.
   config.vm.provision "shell", inline: "sudo rm /etc/localtime && sudo ln -s /usr/share/zoneinfo/America/New_York /etc/localtime", run: "always"

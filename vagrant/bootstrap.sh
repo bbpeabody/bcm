@@ -69,7 +69,20 @@ yum install -y \
     npm \
     python-pip \
     xauth \
-    firefox
+    firefox \
+    xorg-x11-xauth \
+    xorg-x11-utils \
+    epel-release \
+    webkitgtk3 \
+    mesa-libGLU \
+    zlib \
+    zlib.i686 \
+    libusb
+
+yum install -y --noplugins libgcc libgcc.i686 libstdc++.i686
+yum install -y --downloadonly --downloaddir=/var/tmp/ libstdc++.i686
+yum update -y libstdc++.x86_64
+yum install -y libstdc++.i686
 
 yum clean all
 
