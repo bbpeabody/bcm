@@ -111,3 +111,43 @@
    vagrant resume
    vagrant ssh
    ```
+## Installing Arm Development Studio
+1. Download [Arm Development Studio v2019.1](https://developer.arm.com/tools-and-software/embedded/arm-development-studio/downloads).  
+   * You will need to create an account if you don't alread have one
+   * Downloaded file should be ~/Downloads/DS000-BN-00001-r19p1-00rel1.tgz
+
+1. Give /sbin/nfsd full disk access on MacOs
+   * Your ~/Downloads folder on your Mac is shared via NFS with the vagrant machine mounted at /downloads
+   * MacOs protects the ~/Downloads folder
+   * To make the folder accessible via the NFS mount /downloads on the vagrant build machine, go to
+     System Preferences > Security & Privacy > Privacy > Full Disk Access
+   * Click on the plus signe to add a program
+   * Navigate to /sbin/nfsd (cmd+shift+. to see hidden files and folders)
+   * Files in ~/Downloads should now show up at /downloads on vagrant machine.
+
+1. Untar and unzip file on vagrant build machine.  Make sure to include `-- -Y` option to ssh, so X-windows forwarding is enabled. GUI is necessary to configure license servers later.
+   ```
+   vagrant ssh -- -Y
+   cd /downloads
+   tar -xzf DS000-BN-00001-r19p1-00rel1.tgz
+   ```
+  
+1. Run install script
+   ```
+   cd DS000-BN-00001-r19p1-00rel1
+   ./armds-2019.0-1.sh --i-agree-to-the-contained-eula --skip-post-install
+   ```
+   
+1. Answer 'yes' to all default prompts
+
+1. Launch Arm Development Studio.  This is a GUI, so X-windows forwarding is required.
+   ```
+   ~/developmentstudio-2019.1/bin/armds_ide
+   ```
+
+1. Add these license servers via the GUI and activate product
+   ```
+   38224@lic-irva-350.broadcom.net
+   38224@lic-tlva-001.broadcom.net
+   38224@lic-blr-001.broadcom.net
+   ```
