@@ -2,29 +2,31 @@
 
 pushd 2> /dev/null
 
-usage="usage: $0 [files]"
-build_dir="/git/netxtreme/main/Cumulus/firmware/THOR"
+usage="usage: $0 [thor|chimp] [files]"
+thor_dir="/git/netxtreme/main/Cumulus/firmware/THOR"
+chimp_dir="/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode"
+cov_script=$thor_dir/cov
+
 PATH=/usr/bin:/usr/local/bin:/usr/local/bin:$PATH
 
-#cmd=" \
-#    cd $build_dir && \
-#    project_root=\`git rev-parse --show-toplevel\` && \
-#    echo \$project_root && \
-#    cov-run-desktop --scm-project-root \$project_root \
-#                    --set-new-defect-owner false \
-#                    --dir coverity \
-#                    --all \
-#                    --disable-parse-warnings \
-#                    --disable CONSTANT_EXPRESSION_RESULT \
-#                    --host cov-ccxsw.broadcom.net \
-#                    --user bp892475 \
-#                    --password 17diL3Bert5 \
-#                    --port 8080 \
-#                    --stream 'NXT-SUPER int_nxt thor-b0' $@"
+case $1 in
+     thor)
+         build_dir=$thor_dir
+         ;;
+     chimp)
+         build_dir=$chimp_dir
+         ;;
+     *)
+         echo "Invalid argument $1"
+         echo $usage
+         exit 1
+         ;;
+esac
+shift
 
 cmd=" \
     cd $build_dir && \
-    ./cov da $@"
+    $cov_script da $@"
 
 # Make sure vagrant machine is up
 cd ~/git/bcm/vagrant

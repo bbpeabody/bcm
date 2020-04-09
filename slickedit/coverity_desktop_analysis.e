@@ -32,7 +32,7 @@ static void getOpenFilenameList(_str (&bufNames)[])
 }
 
 
-_command void covdesktop() name_info(',' VSARG2_MACRO)
+_command void covdesktop(_str target='thor') name_info(',' VSARG2_MACRO)
 {
    int i = 0, p = 0;
    _str filelist = "", cmd = "";
@@ -53,7 +53,7 @@ _command void covdesktop() name_info(',' VSARG2_MACRO)
       concur_command('echo ' :+ msg);
       message(msg);
    } else {
-      cmd = '/Users/bpeabody/git/bcm/scripts/vagrant_cov_desktop.sh ' :+ filelist :+ ';/Applications/SlickEditPro2019.app/Contents/MacOS/vs "-#covdesktop_done"';
+      cmd = '/Users/bpeabody/git/bcm/scripts/vagrant_cov_desktop.sh ' :+ target :+ ' ' :+ filelist :+ ';/Applications/SlickEditPro2019.app/Contents/MacOS/vs "-#covdesktop_done"';
       concur_command(cmd,false,true,false,false);
    }
 }
