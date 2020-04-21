@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cp ~/.ssh/id_rsa .
+docker build . -t bldr
+rm id_rsa

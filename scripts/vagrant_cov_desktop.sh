@@ -8,6 +8,8 @@ chimp_dir="/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode"
 cov_script=$thor_dir/cov
 
 PATH=/usr/bin:/usr/local/bin:/usr/local/bin:$PATH
+LOCAL_GIT=/Users/bpeabody/git/netxtreme/
+REMOTE_GIT=/git/netxtreme/
 
 case $1 in
      thor)
@@ -26,8 +28,7 @@ shift
 
 cmd=" \
     cd $build_dir && \
-    $cov_script da $@"
-
+    $cov_script da $@ | sed -e \"s|$REMOTE_GIT|$LOCAL_GIT|g\""
 # Make sure vagrant machine is up
 cd ~/git/bcm/vagrant
 vagrant status | grep running &> /dev/null || vagrant up

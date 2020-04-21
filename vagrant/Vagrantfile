@@ -25,12 +25,20 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |vb|
     vb.name = "bldr"
     vb.cpus = 8
-    vb.memory = 8192
+    vb.memory = 16384
 
     # Use virtio for best performance. If vagrant up hangs, comment this line.
     vb.default_nic_type = "virtio"
-    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
-    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+    vb.customize [
+        "modifyvm", :id,
+        "--natdnshostresolver1", "on",
+        "--natdnsproxy1", "on",
+        "--paravirtprovider", "none",
+        "--vram", "32",
+        "--graphicscontroller", "vmsvga",
+        "--audio", "none"
+    ]
+    #vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
   end
   
   # vagrant-vbguest plugin automatically install the host's VirtualBox Guest Additions 

@@ -163,6 +163,9 @@ set encoding=utf8
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
 
+" Set search highlight background and foreground colors
+hi Search ctermbg=LightYellow
+hi Search ctermfg=Red
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Files, backups and undo

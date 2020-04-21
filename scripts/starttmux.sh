@@ -67,7 +67,7 @@ do
     tmux send-keys "clear" C-m
 done
 
-# Window 2 Configuration - 4 quandrants, Durham VDI
+# Window 3 Configuration - 4 quandrants, Durham VDI
 echo "Configuring window 3..."
 tmux new-window -t $session -n "vdi-durham"
 tmux select-window -t $session:3
@@ -81,6 +81,37 @@ do
     gtimeout 5 tmux wait-for cmd-done || { echo "Timed out waiting for ssh $vdi_durham" && break; }
     tmux send-keys "cd $thor_path" C-m
     tmux send-keys "clear" C-m
+done
+
+tmux select-window -t $session:0
+tmux selectp -t 0
+
+# Window 4 Configuration - 4 quandrants, shaper
+echo "Configuring window 4..."
+tmux new-window -t $session -n "shaper"
+tmux select-window -t $session:4
+tmux splitw -h -t 0
+tmux splitw -v -t 1
+tmux splitw -v -t 0
+for i in {0..3}
+do
+    tmux selectp -t $i
+    tmux send-keys "ssh shaper -o 'PermitLocalCommand yes' -o 'LocalCommand tmux wait-for -S cmd-done'" C-m
+    gtimeout 5 tmux wait-for cmd-done || { echo "Timed out waiting for ssh shaper" && break; }
+done
+
+# Window 5 Configuration - 4 quandrants, domino
+echo "Configuring window 5..."
+tmux new-window -t $session -n "domino"
+tmux select-window -t $session:5
+tmux splitw -h -t 0
+tmux splitw -v -t 1
+tmux splitw -v -t 0
+for i in {0..3}
+do
+    tmux selectp -t $i
+    tmux send-keys "ssh domino -o 'PermitLocalCommand yes' -o 'LocalCommand tmux wait-for -S cmd-done'" C-m
+    gtimeout 5 tmux wait-for cmd-done || { echo "Timed out waiting for ssh domino" && break; }
 done
 
 tmux select-window -t $session:0

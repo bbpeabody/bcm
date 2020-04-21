@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage="usage: $0 {-c|--cov-build} {-s|--signed} [thor|chimp] [debug|release|clean]"
+usage="usage: $0 {-c|--cov-build} {-s|--signed} [thor|chimp] [debug|release|all|clean]"
 thor_dir='/git/netxtreme/main/Cumulus/firmware/THOR'
 chimp_dir='/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode'
 cov_script=$thor_dir/cov
@@ -63,6 +63,20 @@ case $2 in
         ;;
     release)
         cmd="$cmd release"
+        ;;
+    all)
+        case $1 in
+            thor)
+                # Default Thor to release if 'all' option used
+                cmd="$cmd release"
+                ;;
+            chimp)
+                cmd="        ./make_cmba_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                cmd="$cmd && ./make_stratus_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                cmd="$cmd && ./make_sr_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                cmd="$cmd && ./make_ns3_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                ;;
+        esac
         ;;
     clean)
         if [ "$cov" = true ] ; then
