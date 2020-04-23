@@ -75,5 +75,4 @@ done
 if $rebuild; then
     docker-compose build bldr
 fi
-echo "$@"
 docker-compose run --rm bldr $cmd "$@"
