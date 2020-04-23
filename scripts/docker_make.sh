@@ -1,13 +1,13 @@
 #!/bin/bash
 
 usage="usage: $0 {-c|--cov-build} {-s|--signed} [thor] [debug|release|all|clean]"
-
-docker_container="bldr"
-thor_dir='/root/git/netxtreme/main/Cumulus/firmware/THOR'
+my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+docker_dir="$my_dir/../docker"
+thor_dir='/home/$(id -un)/git/netxtreme/main/Cumulus/firmware/THOR'
 #chimp_dir='/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode'
 cov_script=$thor_dir/cov
-PATH=/usr/bin:/usr/local/bin:/usr/local/bin:$PATH
 signed_user=bp892475
+signed_pwd="$HOME/sign.txt"
 
 cov=false
 signed=false
@@ -104,18 +104,17 @@ if [ "$cov" = true ] ; then
     cmd="$cov_script"
 fi
 if [ "$signed" = true ] ; then
-    signed_input='cat ~/sign.txt | '
+    signed_input="cat $signed_pwd"
 else
-    signed_input=""
+    signed_input="cat /dev/null"
 fi
 
-eval time \
-     $signed_input \
-     docker run --volume ~:/root:delegated \
-                --workdir $build_dir \
-                --entrypoint $cmd \
-                --env USER=$signed_user \
-                -i \
-                --hostname $docker_container \
-                $docker_container \
-                $args
+pushd $docker_dir
+time \
+$signed_input | \
+     ./run \
+         --vdiuser $signed_user \
+         --cmd /bin/bash \
+         -- \
+         -c "cd $build_dir && $cmd $args"
+popd

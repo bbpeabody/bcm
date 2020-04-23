@@ -3,14 +3,17 @@
 pushd 2> /dev/null
 
 usage="usage: $0 [thor|chimp] [files]"
-thor_dir="/root/git/netxtreme/main/Cumulus/firmware/THOR"
-chimp_dir="/root/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode"
+my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+docker_dir="$my_dir/../docker"
+docker_home="/home/$(id -un)"
+thor_dir="$docker_home/git/netxtreme/main/Cumulus/firmware/THOR"
+chimp_dir="$docker_home/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode"
 cov_script=$thor_dir/cov
-docker_container="bldr"
+local_nxt="$HOME/git/netxtreme/"
+docker_nxt="$docker_home/git/netxtreme/"
+
 
 PATH=/usr/bin:/usr/local/bin:/usr/local/bin:$PATH
-LOCAL_GIT=/Users/bpeabody/git/netxtreme/
-REMOTE_GIT=/root/git/netxtreme/
 
 case $1 in
      thor)
@@ -27,15 +30,21 @@ case $1 in
 esac
 shift
 
-cmd=$cov_script
-args="da $@ | sed -e \"s|$REMOTE_GIT|$LOCAL_GIT|g\""
+# Translate filenames from local filesystem to docker filesystem
+files=""
+for file in $@; do
+    docker_file=`realpath $file | sed -e "s|^$local_nxt|$docker_nxt|"`
+    files="$files $docker_file"
+done
 
-eval \
-    time \
-    docker run --volume ~:/root:delegated \
-               --workdir $build_dir \
-               --entrypoint $cmd \
-               -i \
-               --hostname $docker_container \
-               $docker_container \
-               $args
+# Command 'cov da'. Translate Coverity results from docker filesystem to local filesystem
+cmd=$cov_script
+args="da $files | sed -e \"s|$docker_nxt|$local_nxt|g\""
+
+pushd $docker_dir
+time \
+./run \
+    --cmd /bin/bash \
+    -- \
+    -c "cd $build_dir && $cmd $args"
+popd
