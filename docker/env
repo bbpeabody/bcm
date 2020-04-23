@@ -1,6 +1,0 @@
-export ARMTOOLS=~/developmentstudio-2019.1
-export ARM_PRODUCT_PATH=$ARMTOOLS/sw/mappings
-export LM_LICENSE_FILE="38224@lic-irva-350.broadcom.net:38224@lic-tlva-001.broadcom.net:38224@lic-blr-001.broadcom.net:38224@lic-irva-000.broadcom.net"
-export ARM_TOOL_VARIANT=gold
-export ARMCC_TOOLCHAIN_PATH2=$ARMTOOLS/sw/ARMCompiler5.06u6/bin
-export PATH="$PATH:$ARMCC_TOOLCHAIN_PATH2:/git/netxtreme/main/Cumulus/firmware/core/Makefiles/:/projects/ccxsw_tools/coverity/2019.03/cov-analysis-linux64-2019.03/bin"
