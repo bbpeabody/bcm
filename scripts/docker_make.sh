@@ -109,7 +109,7 @@ else
     signed_input="cat /dev/null"
 fi
 
-pushd $docker_dir
+pushd $docker_dir &> /dev/null
 time \
 $signed_input | \
      ./run \
@@ -117,4 +117,4 @@ $signed_input | \
          --cmd /usr/bin/bash \
          -- \
          -c "source /etc/profile.d/env.sh && cd $build_dir && $cmd $args"
-popd
+popd &> /dev/null
