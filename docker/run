@@ -1,0 +1,79 @@
+#!/bin/bash
+
+usage="
+usage: run [{-v|--vdiuser} <VDIUSERNAME>] [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [--rebuild] [-c|--cmd <CMD>]"
+uservdi=bp892475
+user=$(id -un)
+group=$(id -gn)
+uid=$(id -u)
+gid=$(id -g)
+
+rebuild=false
+params=""
+while (( "$#" )); do
+   case "$1" in
+     -v|--vdiuser)
+       uservdi=$2
+       shift 2
+       ;;
+     -u|--user)
+       user=$2
+       shift 2
+       ;;
+     -g|--group)
+       group=$2
+       shift 2
+       ;;
+     -U|--uid)
+       uid=$2
+       shift 2
+       ;;
+     -G|--gid)
+       gid=$2
+       shift 2
+       ;;
+     --rebuild)
+       rebuild=true
+       shift 1
+       ;;
+     -c|--cmd)
+       cmd=$2
+       shift 2
+       ;;
+     --) # end argument parsing
+       shift
+       break
+       ;;
+     -*|--*=) # unsupported flags
+       echo -e $usage
+       echo "Error: Unsupported flag $1" >&2
+       exit 1
+       ;;
+     *) # preserve positional arguments
+       params="$params $1"
+       shift
+       ;;
+   esac
+done
+
+#eval set -- "$params"
+
+export uservdi
+export user
+export group
+export uid
+export gid
+
+# Copy files needed to build container from home directory
+files_to_copy=( ~/.vimrc ~/.bashrc ~/.gitconfig ~/.gitignore ~/.coverity_auth_key )
+for file in ${files_to_copy[@]}; do
+    if [ -e $file ] && [ ! -e "./$(basename $file)" ]; then
+        cp $file .
+    fi
+done
+
+if $rebuild; then
+    docker-compose build bldr
+fi
+echo "$@"
+docker-compose run --rm bldr $cmd "$@"

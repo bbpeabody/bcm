@@ -1,0 +1,55 @@
+version: '3.3'
+services:
+    bldr:
+        build:
+            context: .
+            args:
+                - uservdi
+                - user
+                - group
+                - uid
+                - gid
+        environment:
+            USER: ${uservdi}
+        volumes:
+            - type: volume
+              source: ssh
+              target: /home/${user}/.ssh
+              read_only: true
+            - type: volume
+              source: ccxsw_tools
+              target: /projects/ccxsw_tools
+              read_only: true
+            - type: volume
+              source: git
+              target: /home/${user}/git
+        hostname: bldr
+        working_dir: /home/${user}/git
+        user: ${user}
+        privileged: true
+        tty: true
+        stdin_open: true
+
+volumes:
+    ssh:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
+            device: :/System/Volumes/Data/Users/${user}/.ssh
+    ccxsw_tools:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
+            device: :/System/Volumes/Data/Users/${user}/ccxsw_tools
+    git:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+            device: :/System/Volumes/Data/Users/${user}/git
+
+
+            
+            
