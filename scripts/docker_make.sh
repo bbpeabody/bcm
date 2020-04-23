@@ -1,10 +1,10 @@
 #!/bin/bash
 
-usage="usage: $0 {-c|--cov-build} {-s|--signed} [thor] [debug|release|all|clean]"
+usage="usage: $0 {-c|--cov-build} {-s|--signed} [thor|chimp] [debug|release|all|clean]"
 my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 docker_dir="$my_dir/../docker"
 thor_dir='/home/$(id -un)/git/netxtreme/main/Cumulus/firmware/THOR'
-#chimp_dir='/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode'
+chimp_dir='/home/$(id -un)/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode'
 cov_script=$thor_dir/cov
 signed_user=bp892475
 signed_pwd="$HOME/sign.txt"
@@ -46,10 +46,10 @@ case $1 in
         cmd="./make_thor_pkg.sh"
         args="RV=B"
         ;;
-    #chimp)
-    #    build_dir=$chimp_dir
-    #    cmd="./make_cmba_afm_pkg.sh"
-    #    ;;
+    chimp)
+        build_dir=$chimp_dir
+        cmd="./make_cmba_afm_pkg.sh"
+        ;;
     *)
         echo "Invalid build target: $1"
         echo $usage
@@ -74,12 +74,12 @@ case $2 in
                 # Default Thor to release if 'all' option used
                 args="$args release"
                 ;;
-            #chimp)
-            #    cmd="        ./make_cmba_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
-            #    cmd="$cmd && ./make_stratus_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
-            #    cmd="$cmd && ./make_sr_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
-            #    cmd="$cmd && ./make_ns3_pkg.sh release nvram_lkup_index qos_cfg_profiles"
-            #    ;;
+            chimp)
+                cmd="        ./make_cmba_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                cmd="$cmd && ./make_stratus_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                cmd="$cmd && ./make_sr_afm_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                cmd="$cmd && ./make_ns3_pkg.sh release nvram_lkup_index qos_cfg_profiles"
+                ;;
         esac
         ;;
     clean)
@@ -114,7 +114,7 @@ time \
 $signed_input | \
      ./run \
          --vdiuser $signed_user \
-         --cmd /bin/bash \
+         --cmd /usr/bin/bash \
          -- \
-         -c "cd $build_dir && $cmd $args"
+         -c "source /etc/profile.d/env.sh && cd $build_dir && $cmd $args"
 popd

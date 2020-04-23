@@ -1,21 +1,6 @@
 # Start with CentOS7
 FROM centos:7 AS base
 
-ARG uservdi
-ARG user
-ARG group
-ARG uid
-ARG gid
-
-# Ensure the user set the required arguments.
-RUN args=(uservdi user group uid gid); \
-    for arg in ${args[*]}; do \
-        if [ -z ${!arg} ]; then \
-            echo "$arg must be set as a build argument"; \
-            exit 1; \
-        fi \
-    done
-
 # Update all packages
 RUN yum update -y \
 && yum install -y https://centos7.iuscommunity.org/ius-release.rpm \
@@ -34,6 +19,16 @@ RUN yum update -y \
     python-pip \
     sudo \
     npm \
+    gtk2 \
+    alsa-lib \
+    mesa-libGLU \
+    libusb \
+    libXt \
+    libXtst \
+    libgcc \
+    libstdc++ \
+    zlib \
+    webkitgtk3 \
 && yum clean all
 
 # Build needs cmake3 but calls cmake
@@ -41,6 +36,25 @@ RUN ln -sf /usr/bin/cmake3 /usr/bin/cmake
 
 # Signing scripts looks for perl in /usr/local/bin
 RUN ln -sf /usr/bin/perl /usr/local/bin
+
+ARG uservdi
+ARG user
+ARG group
+ARG uid
+ARG gid
+ARG armds_tgz
+ARG armds_dir
+ARG armds_installer
+ARG armds_installdir
+
+# Ensure the user set the required arguments.
+RUN args=(uservdi user group uid gid armds_tgz armds_dir armds_installer armds_installdir); \
+    for arg in ${args[*]}; do \
+        if [ -z ${!arg} ]; then \
+            echo "$arg must be set as a build argument"; \
+            exit 1; \
+        fi \
+    done
 
 # Try to match up the host user:group with the guest user:group.
 # Delete the guest user and group if found, then
@@ -65,6 +79,13 @@ RUN chown $user:$group .*
 # Update environment
 COPY env /tmp/env
 RUN cat /tmp/env >> /etc/profile.d/env.sh && rm /tmp/env
+
+# Install Arm Development Studio 2019.1
+COPY ${armds_tgz} /tmp/
+RUN echo /tmp/${armds_tgz}
+RUN tar -C /tmp -xf /tmp/${armds_tgz}
+RUN /tmp/${armds_dir}/${armds_installer} --i-agree-to-the-contained-eula --no-interactive -d ${armds_installdir}
+RUN rm -fr /tmp/${armds_tgz} /tmp/${armds_dir}
 
 # Get the smallest image possible.
 FROM scratch

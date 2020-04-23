@@ -9,8 +9,13 @@ services:
                 - group
                 - uid
                 - gid
+                - armds_tgz
+                - armds_dir
+                - armds_installer
+                - armds_installdir
         environment:
             USER: ${uservdi}
+            DISPLAY: ${ipaddr}:0
         volumes:
             - type: volume
               source: ssh
