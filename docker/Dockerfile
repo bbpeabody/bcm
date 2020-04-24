@@ -19,16 +19,17 @@ RUN yum update -y \
     python-pip \
     sudo \
     npm \
-    gtk2 \
-    alsa-lib \
-    mesa-libGLU \
-    libusb \
-    libXt \
-    libXtst \
-    libgcc \
-    libstdc++ \
-    zlib \
-    webkitgtk3 \
+    # These packages are required for the ARM Developer's Studio GUI
+    # gtk2 \
+    # alsa-lib \
+    # mesa-libGLU \
+    # libusb \
+    # libXt \
+    # libXtst \
+    # libgcc \
+    # libstdc++ \
+    # zlib \
+    # webkitgtk3 \
 && yum clean all
 
 # Build needs cmake3 but calls cmake
@@ -42,13 +43,9 @@ ARG user
 ARG group
 ARG uid
 ARG gid
-ARG armds_tgz
-ARG armds_dir
-ARG armds_installer
-ARG armds_installdir
 
 # Ensure the user set the required arguments.
-RUN args=(uservdi user group uid gid armds_tgz armds_dir armds_installer armds_installdir); \
+RUN args=(uservdi user group uid gid); \
     for arg in ${args[*]}; do \
         if [ -z ${!arg} ]; then \
             echo "$arg must be set as a build argument"; \
@@ -76,16 +73,15 @@ WORKDIR /home/$user
 COPY .*  ./
 RUN chown $user:$group .*
 
-# Update environment
-COPY env /tmp/env
-RUN cat /tmp/env >> /etc/profile.d/env.sh && rm /tmp/env
+# Create a link to the ccxsw_tools.  Make expects them to be in /projects
+RUN mkdir /projects \
+    && ln -s /mnt/build_tools/ccxsw_tools /projects/ccxsw_tools
 
-# Install Arm Development Studio 2019.1
-COPY ${armds_tgz} /tmp/
-RUN echo /tmp/${armds_tgz}
-RUN tar -C /tmp -xf /tmp/${armds_tgz}
-RUN /tmp/${armds_dir}/${armds_installer} --i-agree-to-the-contained-eula --no-interactive -d ${armds_installdir}
-RUN rm -fr /tmp/${armds_tgz} /tmp/${armds_dir}
+#COPY ${armds_tgz} /tmp/
+#RUN echo /tmp/${armds_tgz}
+#RUN tar -C /tmp -xf /tmp/${armds_tgz}
+#RUN /tmp/${armds_dir}/${armds_installer} --i-agree-to-the-contained-eula --no-interactive -d ${armds_installdir}
+#RUN rm -fr /tmp/${armds_tgz} /tmp/${armds_dir}
 
 # Get the smallest image possible.
 FROM scratch

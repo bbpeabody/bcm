@@ -114,7 +114,7 @@ time \
 $signed_input | \
      ./run \
          --vdiuser $signed_user \
-         --cmd /usr/bin/bash \
+         --cmd /bin/bash \
          -- \
-         -c "source /etc/profile.d/env.sh && cd $build_dir && $cmd $args"
+         -c "cd $build_dir && $cmd $args"
 popd &> /dev/null

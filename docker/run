@@ -1,8 +1,9 @@
 #!/bin/bash
 
 usage="
-usage: run [{-v|--vdiuser} <VDIUSERNAME>] [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [{-i|--ipaddr} <HOSTIP>] [--rebuild] [-c|--cmd <CMD>]"
+usage: run [{-v|--vdiuser} <VDIUSERNAME>] [{-h|--vdihost} <VDIHOST>] [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [{-i|--ipaddr} <HOSTIP>] [--rebuild] [-c|--cmd <CMD>]"
 uservdi=bp892475
+hostvdi=ashvda3390.ash.broadcom.net
 user=$(id -un)
 group=$(id -gn)
 uid=$(id -u)
@@ -16,6 +17,10 @@ while (( "$#" )); do
    case "$1" in
      -v|--vdiuser)
        uservdi=$2
+       shift 2
+       ;;
+     -h|--vdihost)
+       hostvdi=$2
        shift 2
        ;;
      -u|--user)
@@ -62,55 +67,25 @@ while (( "$#" )); do
    esac
 done
 
-#eval set -- "$params"
-
 # These variables are used when building image and running container
 export uservdi
 export ipaddr
 export user
 
-if ! docker images | grep -e '^docker_bldr\s\+latest' &> /dev/null; then
-    # Docker image doesn't exist.  Need to rebuild.
-    rebuild=true
-fi
-
-if $rebuild; then
-    
-    # Copy files needed to build container from home directory
-    files_to_copy=( ~/.vimrc ~/.bashrc ~/.gitconfig ~/.gitignore ~/.coverity_auth_key )
-    for file in ${files_to_copy[@]}; do
-        if [ -e $file ] && [ ! -e "./$(basename $file)" ]; then
-            cp $file .
-        fi
-    done
-
-    # ARM Developer's Studio installation file.  This file needs to exist in this directory when the container
-    # is built.  Available here:
-    # https://developer.arm.com/tools-and-software/embedded/arm-development-studio/downloads
-    # Development Studio 2019.1 Released November 1, 2019
-    armds_tgz="DS000-BN-00001-r19p1-00rel1.tgz"
-    armds_ver="2019.1"                      
-    armds_dir=${armds_tgz%.*}
-    armds_installer="armds-$armds_ver.sh"
-    armds_installdir="/home/$user/developmentstudio-$armds_ver"
-
-    if [ ! -f $armds_tgz ]; then
-        echo "ERROR: Build of container will fail. Dockerfile expects $armds_tgz to be present in current directory."
-        exit 1
-    fi
-
-    # These variables are only used when building image
+if $rebuild || ! docker images | grep -e '^docker_bldr\s\+latest' &> /dev/null; then
+    # Either the user passed in the --rebuild option or the image doesn't exist, so
+    # call the build script to build the image.
+    export hostvdi
     export group
     export uid
     export gid
-    export armds_tgz
-    export armds_dir
-    export armds_installer
-    export armds_installdir
-
-    docker-compose build bldr
+    ./build || exit 1
 fi
 
+# 
+# Packages Xquartz and socat are required on MacOS in order for GUI to function inside the 
+# container.  
+#
 # Check if socat is running and connected to port 6000
 if ! ps -e | grep -v grep | grep 'socat TCP-LISTEN:6000' &> /dev/null; then
     # socat is not running.  Needed for GUI applications in container
@@ -137,4 +112,9 @@ if ! ps -e | grep -v grep | grep Xquartz &> /dev/null; then
     fi
 fi
 
+#
+# Run the bldr application from the docker-compose.yml file.  If the --cmd option was specified, then
+# that command will be run inside the container. By default, with no --cmd option, an interactive
+# shell is opened.
+#
 docker-compose run --rm bldr $cmd "$@"

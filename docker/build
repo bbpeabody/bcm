@@ -1,0 +1,104 @@
+#!/bin/bash
+
+# This script is called by the run script. It is not intended to be called directly. To rebuild the
+# container, use 'run --rebuild' with appropriate options.
+
+usage="This script is called by the run script. It is not intended to be called directly. To rebuild the
+container, use 'run --rebuild' with appropriate options."
+
+while (( "$#" )); do
+   case "$1" in
+     -h|--help)
+       echo -e $usage
+       exit 0
+       ;;
+     *) # unsupported option
+       echo -e $usage
+       echo "Error: Unsupported flag $1" >&2
+       exit 1
+       ;;
+   esac
+done
+
+#
+# Check the environment and make sure all variables are defined
+#
+required_env=( uservdi hostvdi user group uid gid )
+for e in ${required_env[@]}; do
+    if [ -z ${!e} ]; then
+        echo "ERROR: Requires environment variable '$e'. Only run this script with 'run --rebuild'."
+        exit 1
+    fi
+done
+
+#
+# Copy files needed to build container from home directory
+# All of these files are optional and will only be copied to the container if they exist.
+#
+files_to_copy=( \
+    ~/.vimrc \
+    ~/.bashrc \
+    ~/.gitconfig \
+    ~/.gitignore \
+    ~/.coverity_auth_key \
+)
+for file in ${files_to_copy[@]}; do
+    if [ -e $file ] && [ ! -e "./$(basename $file)" ]; then
+        cp $file .
+    fi
+done
+
+#
+# There are compiler and coverity tools needed by the container.  These tools will be installed on the
+# host and the volume will be NFS mounted to the container.
+#
+build_tools="$HOME/build_tools"
+if [ ! -d $build_tools ]; then
+    echo "Creating directory $build_tools..."
+    mkdir $build_tools || exit 1
+fi
+
+#
+# Check for ARM Developer's Studio files on the host system, and copy if not found
+#
+armcc="$build_tools/developmentstudio-2019.1/sw/ARMCompiler5.06u6/bin/armcc"
+armcc_archive="./armcc.tar.xz"
+if [ ! -x $armcc ]; then
+    echo "Installing armcc toolchain..."
+    tar -C $build_tools -xJf $armcc_archive || exit 1
+fi
+
+#
+# Check for tools on the host system.  If not found, retrieve them from users VDI instance and
+# install them.
+#
+host_ccx="$build_tools/ccxsw_tools"
+rmt_ccx="/projects/ccxsw_tools"
+if [ ! -d $host_ccx ]; then
+    echo "Creating directory $host_ccx..."
+    mkdir $host_ccx || exit 1
+fi
+required_tools=( \
+    mentor_graphics/mgc-2018.070 \
+    sbl_tools \
+    contrib \
+    coverity/2019.03/cov-analysis-linux64-2019.03 \
+)
+for tool in ${required_tools[@]}; do
+    host_tool="$host_ccx/$tool"
+    if [ ! -d $host_tool ]; then
+        echo "Creating directory $host_tool..."
+        mkdir -p $host_tool || exit 1
+        rmt_tool="$rmt_ccx/$tool"
+        echo "Copying $host_tool from VDI..."
+        ssh $uservdi@$hostvdi "   tmp=\`mktemp\` \
+                               && tar -C $rmt_tool -czf \$tmp . \
+                               && cat \$tmp \
+                               && rm \$tmp" | tar -C $host_tool -xzf - 
+    fi
+done
+
+#
+# Finally build the container using the docker-compose.yml file
+#
+docker-compose build bldr
