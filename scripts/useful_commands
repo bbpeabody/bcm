@@ -1,0 +1,4 @@
+smbutil view smb://vaainas09.ash.broadcom.net/ccxsw_tools | grep ccxsw
+showmount -e vaainas09.ash.broadcom.net
+cov-run-desktop --dir coverity --disconnected --aggressiveness-level high ../../firmware/hw/nitro5x/Thor/hw_trp.c
+cov-manage-im --host cov-ccxsw.broadcom.net --auth-key-file ~/.coverity_auth_key --mode streams --show --project NXT-SUPER --name "* thor-b0" --fields stream,desktop-analysis
