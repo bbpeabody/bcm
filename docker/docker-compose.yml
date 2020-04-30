@@ -39,16 +39,16 @@ volumes:
         driver_opts:
             type: nfs
             o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
-            device: :/System/Volumes/Data/Users/${user}/.ssh
+            device: :${volume_root}/${user}/.ssh
     build_tools:
         driver: local
         driver_opts:
             type: nfs
             o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
-            device: :/System/Volumes/Data/Users/${user}/build_tools
+            device: :${volume_root}/${user}/build_tools
     git:
         driver: local
         driver_opts:
             type: nfs
             o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
-            device: :/System/Volumes/Data/Users/${user}/git
+            device: :${volume_root}/${user}/git

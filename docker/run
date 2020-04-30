@@ -67,10 +67,28 @@ while (( "$#" )); do
    esac
 done
 
+# MacOS Catalina uses a different path for the user homes
+mac_os_ver=`sw_vers -productVersion`
+case "$mac_os_ver" in
+ 10.15.*)
+   # MacOS Catalina
+   volume_root=/System/Volumes/Data/Users
+   ;;
+ 10.14.*)
+   # MacOS Mohave
+   volume_root=/Users
+   ;;
+ *) 
+   echo "Error: MacOS version $mac_os_ver is not supported. Only Mohave(10.14) and Catalina(10.15) are supported." >&2
+   exit 1
+   ;;
+esac
+
 # These variables are used when building image and running container
 export uservdi
 export ipaddr
 export user
+export volume_root
 
 if $rebuild || ! docker images | grep -e '^docker_bldr\s\+latest' &> /dev/null; then
     # Either the user passed in the --rebuild option or the image doesn't exist, so

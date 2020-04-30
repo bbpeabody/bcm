@@ -58,14 +58,32 @@ RUN args=(uservdi user group uid gid); \
 # add new user, add to wheel group and update sudoers to allow passwordless sudo
 # Add the vdi user. The signing scripts require a user account.
 # Only create the vdi account if it is different than user.
-RUN if id -u $user; then userdel $user; fi \
-    && gname=`getent group $gid | cut -d':' -f 1` && echo "looking for group($gid): $gname" \
-    && if [ -n "$gname" ]; then groupdel $gname; fi \
-    && groupadd -g $gid $group \
-    && useradd -rm -d /home/$user -u $uid -g $gid -s /bin/bash $user \
-    && usermod -aG wheel $user \
-    && sed --in-place 's/^#\s*\(%wheel\s\+ALL=(ALL)\s\+NOPASSWD:\s\+ALL\)/\1/' /etc/sudoers \
-    && if [ "$user" != "$uservdi" ]; then useradd -rm ${uservdi}; fi
+#RUN if id -u $user; then userdel $user; fi \
+#    && gname=`getent group $gid | cut -d':' -f 1` && echo "looking for group($gid): $gname" \
+#    && if [ -n "$gname" ]; then groupdel $gname; fi \
+#    && groupadd -g $gid $group \
+#    && useradd -rm -d /home/$user -u $uid -g $gid -s /bin/bash $user \
+#    && usermod -aG wheel $user \
+#    && sed --in-place 's/^#\s*\(%wheel\s\+ALL=(ALL)\s\+NOPASSWD:\s\+ALL\)/\1/' /etc/sudoers \
+#    && if [ "$user" != "$uservdi" ]; then useradd -rm ${uservdi}; fi
+
+# Delete user if already exists on base CentOS
+RUN if id -u $user; then userdel $user; fi
+
+# Delete group if already exists on base CentOS
+RUN gname=`getent group $gid | cut -d':' -f 1` && echo "looking for group($gid): $gname" \
+    && if [ -n "$gname" ]; then groupdel $gname; fi
+
+# Create new user/group with same user ID/group ID as on host
+RUN groupadd -g $gid $group \
+    && useradd -rm -d /home/$user -u $uid -g $gid -s /bin/bash $user
+
+# Add user to sudoers group
+RUN usermod -aG wheel $user \
+    && sed --in-place 's/^#\s*\(%wheel\s\+ALL=(ALL)\s\+NOPASSWD:\s\+ALL\)/\1/' /etc/sudoers
+
+# Create the VDI user if different from the user.  VDI user is necessary for signing scripts
+RUN if [ "$user" != "$uservdi" ]; then useradd -rm ${uservdi}; fi
 
 # Set the user and working dir so the container start with them.
 # Add any customizations.
