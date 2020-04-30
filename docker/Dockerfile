@@ -78,6 +78,9 @@ RUN gname=`getent group $gid | cut -d':' -f 1` && echo "looking for group($gid):
 RUN groupadd -g $gid $group \
     && useradd -rm -d /home/$user -u $uid -g $gid -s /bin/bash $user
 
+# Set owner/group for home dir
+RUN chown $user:$group /home/$user
+
 # Add user to sudoers group
 RUN usermod -aG wheel $user \
     && sed --in-place 's/^#\s*\(%wheel\s\+ALL=(ALL)\s\+NOPASSWD:\s\+ALL\)/\1/' /etc/sudoers
