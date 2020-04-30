@@ -53,7 +53,7 @@ echo "== Setting up nfs..."
 LINE_CATALINA="/System/Volumes/Data -alldirs -mapall=$U:$G localhost"
 LINE="/Users -alldirs -mapall=$U:$G localhost"
 MACOS_VER=`sw_vers -productVersion`
-if [[ $MACOS_VER = 10.15.* ]]; then
+if [[ $MACOS_VER = 10.15* ]]; then
     # This is MacOS Catalina, change the export line
     LINE=$LINE_CATALINA
 fi
