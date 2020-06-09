@@ -1,0 +1,261 @@
+#!/bin/bash
+
+#set -e
+
+#rel=$1
+declare list_rel
+declare sit_rel 
+
+
+sit_dir="https://eca-ccxsw.irv.broadcom.com/releases/nxe/SIT/"
+#sit_dir="https://eca-ccxsw.irv.broadcom.com/releases/nxe/SIT/216.0/"
+#         https://eca-ccxsw.irv.broadcom.com/releases/nxe/SIT/215.0/
+
+function validate_url(){
+    if [[ `wget -S --no-check-certificate --spider $1 2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+
+}
+
+
+function print_usage(){
+    echo "Usage:"
+    echo "Show list of releases"
+    echo "    $0 215.0"
+    echo "Copy specific SIT release"
+    echo "    $0 215.0.179.0"
+    echo "Optional args:"
+    echo "   -b      To build bnxtmt and bnxt_en"
+    echo "   -roce   To install roce components"
+}
+
+function parse_sit() {
+
+    str=$1
+
+    re='^[0-9.]+'
+
+    if ! [[ $str =~ $re ]]; then
+        echo "Error: $str not a SIT release"
+        print_usage
+        exit
+    fi
+
+    re='\.'
+    if ! [[ $str =~ $re ]]; then
+        # no dot assume x.0 rel
+        str="${str}.0"
+    fi
+
+
+    n1=$(echo $str | cut -d'.' -f1)
+    n2=$(echo $str | cut -d'.' -f2)
+    n3=$(echo $str | cut -d'.' -f3)
+    n4=$(echo $str | cut -d'.' -f4)
+
+    if [[ "Sn1" != "" && "$n2" != "" && "$n3" != "" && "$n4" != "" ]]; then
+        sit_rel="${n1}.${n2}.${n3}.${n4}"
+    elif [[ "$n1" != "" && "$n2" != "" ]]; then
+        list_rel="${n1}.${n2}"
+    else 
+        print_usage
+        exit
+    fi
+        
+}
+
+function get_sit(){
+    
+    dir=$1
+    rel=$2
+
+    url="$dir/$rel"
+    ret=$(validate_url $url)
+    
+    if [[ $ret == 'false' ]]; then
+        echo "Unknown SIT url $url"
+        exit -1
+    fi
+    
+    mkdir $rel
+    cd $rel
+    
+    # bnxtmt
+    wget --no-check-certificate -l1  -nd -r  --no-parent --no-check-certificate -A 'bnxtmt-*x86_64.tar.gz'   "$url/bnxtmt/Linux/TH_A"
+    tar -xzvf bnxtmt*x86_64.tar.gz
+
+    
+    
+    
+    wget --no-check-certificate "$url/bnxtnvm/Linux/Debug/bnxtnvm"
+    chmod a+x bnxtnvm
+    wget --no-check-certificate "$url/bnxtqos/bnxtqos"
+    chmod a+x bnxtqos
+    
+    mkdir signed
+    cd signed
+#    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files"
+    mkdir THOR_B0
+    cd THOR_B0
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_B0/Signed/ABPROD-SRT"
+    mkdir Facebook
+    cd Facebook
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_B0/Signed/ABPROD-SRT/Facebook"
+    cd ../../..
+#    mkdir unsigned
+#    cd unsigned
+#    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/Unsigned"
+#    mkdir THOR_B0
+#    cd THOR_B0
+#    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_B0/Unsigned"
+#    cd ../..
+
+    mkdir THOR_DUAL_B0
+    cd THOR_DUAL_B0
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_DUAL_B0/Signed/ABPROD-SRT"
+    mkdir Facebook
+    cd Facebook
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_DUAL_B0/Signed/ABPROD-SRT/Facebook"
+    cd ../..
+
+    if [ "$wh" != "" ]; then
+        mkdir wh
+        cd wh
+        wget --no-check-certificate -l1  -nd -r  --no-parent --no-check-certificate -A 'bnxtmt-*x86_64.tar.gz'   "$url/bnxtmt/Linux/CMB_A"
+        tar -xzvf bnxtmt*x86_64.tar.gz
+        
+        echo "fetching wh+ pkg"
+        wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM957414*.pkg' "$url/Board_Pkg_files"
+        cd ..
+    fi
+        
+
+    mkdir cfg
+    cd cfg
+    # older cfg dir
+    wget --no-check-certificate -l1 -nd -r --no-parent -A '*.CFG' "$url/Board_Pkg_files/NVRAM_Config/BRCM"
+    if [ $? -ne 0 ]; then
+        wget --no-check-certificate -l1 -nd -r --no-parent -A '*.CFG' "$url/Board_Pkg_files/NVRAM_Config/thor"
+        mkdir internal
+        cd internal
+        wget --no-check-certificate -l1 -nd -r --no-parent -A '*.CFG' "$url/Board_Pkg_files/NVRAM_Config/thor/internal"
+        cd ..
+    fi
+    cd ..        
+    
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'bnxt_en-*.tar.gz'   "$url/Linux_Driver"
+    
+    tar -xzvf bnxt_en-*.tar.gz
+    #rm bnxt_en-*.tar.gz
+
+    wget --no-check-certificate "$url/decode_coredump/Linux/decode_coredump"
+    chmod a+x decode_coredump
+    wget --no-check-certificate "$url/decode_coredump/Linux/decode_nvram"
+    chmod a+x decode_nvram
+
+
+}
+
+
+# main
+
+while [ "$1" != "" ]; do
+    case $1 in
+      "-h" | "-help") print_usage
+                      exit
+                      ;;
+      "-roce") roce=$1
+               ;;
+      "-b")    build=1
+               ;;
+      "-wh")   wh=1
+               ;;
+      * )      parse_sit $1
+               #exit 1
+    esac
+    shift
+done
+
+
+if [ "$list_rel" != "" ]; then
+    dir="${sit_dir}/${list_rel}/"
+    curl -sk  $dir | grep '</a></td>' | tail -n +2 | cut -d'>' -f7 | cut -d'<' -f1 | grep -v zip
+    exit 1
+elif [ "$sit_rel" != "" ]; then
+    f1=$(echo $sit_rel | cut -d'.' -f1)
+    f2=$(echo $sit_rel | cut -d'.' -f2)
+    sit_dir="${sit_dir}${f1}.${f2}"
+    get_sit $sit_dir $sit_rel
+#    exit 1
+else
+    print_usage
+    exit 1
+fi
+    
+
+
+if [ "$build" != "" ]; then
+    echo "Building driver and bnxtmt"
+    cd bnxt_en-*
+    make
+    cd ../bnxtmt-*
+    make
+    cd ..
+    if [ "$wh" != "" ]; then
+        cd wh/bnxtmt-*
+        make
+        cd ../../
+    fi
+fi
+
+if [ "$roce" != "" ]; then
+    echo "ROCE support"
+    echo "Installing needed packages with yum"
+    yum install -y libibverbs-devel qperf perftest infiniband-diags \
+        make gcc kernel kernel-devel autoconf aclocal libtool libibverbs-utils
+
+    if ! [ $(grep ib_core /etc/modules-load.d/modules.conf) ]; then
+        echo "ib_core" >> /etc/modules-load.d/modules.conf
+        echo "rdma_ucm" >> /etc/modules-load.d/modules.conf
+        echo "ib_ucm" >> /etc/modules-load.d/modules.conf
+        echo "ib_uverbs" >> /etc/modules-load.d/modules.conf
+        echo "ib_umad" >> /etc/modules-load.d/modules.conf
+        echo "rdma_cm" >> /etc/modules-load.d/modules.conf
+    fi
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'netxtreme*.tar.gz'   "$url/Linux_Driver"
+    tar -xzvf netxtreme*.tar.gz
+    cd netxtreme*
+    make
+    make install
+    cd ..
+    depmod -a
+    rmmod bnxt_re
+    rmmod bnxt_en
+    modprobe bnxt_en
+    modprobe bnxt_re
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'libbnxt_re*.tar.gz'   "$url/Linux_Driver/RoCE_Lib"
+    tar xf libbnxt_re*.tar.gz
+    cd libbnxt_re*
+    sh autogen.sh
+    ./configure
+    make
+    make install
+    rm -f /lib64/libibverbs/libbnxt_re-*
+    if ! grep -Fxq "/usr/local/lib" /etc/ld.so.conf
+    then
+        sh -c "echo /usr/local/lib >> /etc/ld.so.conf"
+    fi
+    ldconfig
+    directory="/etc/libibverbs.d"
+    if ! [ -e $directory ]; then
+        ln -s /usr/local/etc/libibverbs.d /etc/libibverbs.d
+    fi
+    cp bnxt_re.driver /etc/libibverbs.d/
+    dracut -f
+    cd ..
+
+fi
+
