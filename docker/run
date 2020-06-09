@@ -15,40 +15,44 @@ rebuild=false
 params=""
 while (( "$#" )); do
    case "$1" in
-     -v|--vdiuser)
-       uservdi=$2
-       shift 2
-       ;;
-     -h|--vdihost)
-       hostvdi=$2
-       shift 2
-       ;;
-     -u|--user)
-       user=$2
-       shift 2
-       ;;
-     -g|--group)
-       group=$2
-       shift 2
-       ;;
-     -U|--uid)
-       uid=$2
+     -c|--cmd)
+       cmd=$2
        shift 2
        ;;
      -G|--gid)
        gid=$2
        shift 2
        ;;
+     -g|--group)
+       group=$2
+       shift 2
+       ;;
      -i|--ipaddr)
        ipaddr=$2
+       shift 2
+       ;;
+     -n|--name)
+       name=$2
        shift 2
        ;;
      --rebuild)
        rebuild=true
        shift 1
        ;;
-     -c|--cmd)
-       cmd=$2
+     -U|--uid)
+       uid=$2
+       shift 2
+       ;;
+     -u|--user)
+       user=$2
+       shift 2
+       ;;
+     -h|--vdihost)
+       hostvdi=$2
+       shift 2
+       ;;
+     -v|--vdiuser)
+       uservdi=$2
        shift 2
        ;;
      --) # end argument parsing
@@ -135,4 +139,9 @@ fi
 # that command will be run inside the container. By default, with no --cmd option, an interactive
 # shell is opened.
 #
-docker-compose run --rm bldr $cmd "$@"
+args="--rm"
+if [ ! -z $name ]; then
+    args="$args --name $name"
+fi
+
+eval docker-compose run $args bldr $cmd "$@"
