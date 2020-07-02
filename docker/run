@@ -143,5 +143,4 @@ args="--rm"
 if [ ! -z $name ]; then
     args="$args --name $name"
 fi
-
-eval docker-compose run $args bldr $cmd "$@"
+docker-compose run $args bldr $cmd "$@"

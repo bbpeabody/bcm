@@ -3,12 +3,13 @@ FROM centos:7 AS base
 
 # Update all packages
 RUN yum update -y \
-&& yum install -y https://centos7.iuscommunity.org/ius-release.rpm \
+&& yum install -y https://repo.ius.io/ius-release-el7.rpm \
+&& yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm \
 && yum install -y \
     vim \
     cmake3 \
     gcc gcc-c++ \
-    git2u \
+    git224-all \
     glibc.i686 glibc-static \
     java-1.8.0-openjdk-headless \
     kernel-devel \
