@@ -10,6 +10,8 @@ windows=("local" \
          "vdi-durham" \
          "shaper" \
          "domino" \
+         "rail" \
+         "stile" \
          "tiger")
 
 wait_for_text()
@@ -80,7 +82,7 @@ for session in ${sessions[@]}; do
                     tmux send-keys "cd $thor_path" C-m
                     tmux send-keys "clear" C-m
                     ;;
-                "shaper" | "domino" | "tiger")
+                "shaper" | "domino" | "rail" | "stile" | "tiger")
                     tmux send-keys "ssh $win -o 'PermitLocalCommand yes' -o 'LocalCommand tmux wait-for -S cmd-done'" C-m
                     gtimeout 5 tmux wait-for cmd-done || { echo "Timed out waiting for ssh $win" && break; }
                     ;;

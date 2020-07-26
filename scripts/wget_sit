@@ -151,10 +151,13 @@ function get_sit(){
     tar -xzvf bnxt_en-*.tar.gz
     #rm bnxt_en-*.tar.gz
 
-    wget --no-check-certificate "$url/decode_coredump/Linux/decode_coredump"
-    chmod a+x decode_coredump
-    wget --no-check-certificate "$url/decode_coredump/Linux/decode_nvram"
-    chmod a+x decode_nvram
+    wget --no-check-certificate -l1 -nd -r --no-parent -A 'bnxt_re-*.tar.gz'   "$url/Linux_Driver/RoCE_Driver"
+    tar -xzvf bnxt_re-*.tar.gz
+
+    #wget --no-check-certificate "$url/decode_coredump/Linux/decode_coredump"
+    #chmod a+x decode_coredump
+    #wget --no-check-certificate "$url/decode_coredump/Linux/decode_nvram"
+    #chmod a+x decode_nvram
 
 
 }

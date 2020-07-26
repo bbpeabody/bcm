@@ -20,6 +20,7 @@ RUN yum update -y \
     python-pip \
     sudo \
     npm \
+    python3 \
     # These packages are required for the ARM Developer's Studio GUI
     # gtk2 \
     # alsa-lib \
