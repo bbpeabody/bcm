@@ -1,25 +1,13 @@
-# Start with CentOS7
-FROM centos:7 AS base
+# Start with Fedora 32
+FROM fedora:32 AS base
 
 # Update all packages
 RUN yum update -y \
-&& yum install -y https://repo.ius.io/ius-release-el7.rpm \
-&& yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm \
 && yum install -y \
     vim \
-    cmake3 \
     gcc gcc-c++ \
-    git224-all \
-    glibc.i686 glibc-static \
-    java-1.8.0-openjdk-headless \
-    kernel-devel \
-    make \
-    perl-WWW-Mechanize \
-    tcl-devel \
-    npm \
+    git \
     python-pip \
-    sudo \
-    npm \
     python3 \
     gtk2 \
     alsa-lib \
@@ -28,28 +16,31 @@ RUN yum update -y \
     libXt \
     libXtst \
     libgcc \
-    #libgcc.i686 \
+    libgcc.i686 \
     libstdc++ \
-    #libstdc++.i686 \
-    #zlib \
-    #zlib.i686 \
-    #webkitgtk3 \
+    libstdc++.i686 \
+    zlib \
+    zlib.i686 \
+    librsvg2 \
+    ncurses-devel \
+    ncurses \
+    ncurses-compat-libs \
+    libnsl \
+    gtk3 \
+    dbus-x11 \
 && yum clean all
 
-# Build needs cmake3 but calls cmake
-RUN ln -sf /usr/bin/cmake3 /usr/bin/cmake
-
-# Signing scripts looks for perl in /usr/local/bin
-RUN ln -sf /usr/bin/perl /usr/local/bin
-
-ARG uservdi
 ARG user
 ARG group
 ARG uid
 ARG gid
+ARG armds_dir
+ARG armds_tgz
+ARG armds_installer
+ARG armds_installdir
 
 # Ensure the user set the required arguments.
-RUN args=(uservdi user group uid gid); \
+RUN args=(user group uid gid armds_dir armds_tgz armds_installer armds_installdir); \
     for arg in ${args[*]}; do \
         if [ -z ${!arg} ]; then \
             echo "$arg must be set as a build argument"; \
@@ -57,7 +48,7 @@ RUN args=(uservdi user group uid gid); \
         fi \
     done
 
-# Delete user if already exists on base CentOS
+# Delete user if already exists on base Fedora
 RUN if id -u $user; then userdel $user; fi
 
 # Delete group if already exists on base CentOS
@@ -75,20 +66,17 @@ RUN chown $user:$group /home/$user
 RUN usermod -aG wheel $user \
     && sed --in-place 's/^#\s*\(%wheel\s\+ALL=(ALL)\s\+NOPASSWD:\s\+ALL\)/\1/' /etc/sudoers
 
-# Create the VDI user if different from the user.  VDI user is necessary for signing scripts
-RUN if [ "$user" != "$uservdi" ]; then useradd -rm ${uservdi}; fi
-
 # Set the user and working dir so the container start with them.
 # Add any customizations.
 WORKDIR /home/$user
 COPY .*  ./
 RUN chown $user:$group .*
 
-# Create a link to the ccxsw_tools.  Make expects them to be in /projects
-RUN mkdir /projects \
-    && ln -s /mnt/build_tools/ccxsw_tools /projects/ccxsw_tools
-
-#RUN /bin/dbus-uuidgen > /etc/machine-id
+COPY ${armds_tgz} /tmp/
+RUN echo /tmp/${armds_tgz}
+RUN tar -C /tmp -xf /tmp/${armds_tgz}
+RUN /tmp/${armds_dir}/${armds_installer} --i-agree-to-the-contained-eula --no-interactive -d ${armds_installdir}
+RUN rm -fr /tmp/${armds_tgz} /tmp/${armds_dir}
 
 # Get the smallest image possible.
 FROM scratch

@@ -1,0 +1,145 @@
+#!/bin/bash
+
+usage="
+usage: run [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [{-i|--ipaddr} <HOSTIP>] [--rebuild] [-c|--cmd <CMD>]"
+user=$(id -un)
+group=$(id -gn)
+uid=$(id -u)
+gid=$(id -g)
+# Host IP address used for forwarding container's display to host for GUI apps
+ipaddr=`ifconfig en0 | grep -e 'inet\s\+\d\+\.\d\+\.\d\+\.\d\+' | cut -f2 -d " "`
+
+# ARM Developer studio vars
+armds_dir=DS000-BN-00001-r20p0-00rel1
+armds_tgz="$armds_dir.tgz"
+armds_installer=armds-2020.0.sh
+armds_installdir=/armds-2020
+
+
+rebuild=false
+params=""
+while (( "$#" )); do
+   case "$1" in
+     -c|--cmd)
+       cmd=$2
+       shift 2
+       ;;
+     -G|--gid)
+       gid=$2
+       shift 2
+       ;;
+     -g|--group)
+       group=$2
+       shift 2
+       ;;
+     -i|--ipaddr)
+       ipaddr=$2
+       shift 2
+       ;;
+     -n|--name)
+       name=$2
+       shift 2
+       ;;
+     --rebuild)
+       rebuild=true
+       shift 1
+       ;;
+     -U|--uid)
+       uid=$2
+       shift 2
+       ;;
+     -u|--user)
+       user=$2
+       shift 2
+       ;;
+     --) # end argument parsing
+       shift
+       break
+       ;;
+     -*|--*=) # unsupported flags
+       echo -e $usage
+       echo "Error: Unsupported flag $1" >&2
+       exit 1
+       ;;
+     *) # preserve positional arguments
+       params="$params $1"
+       shift
+       ;;
+   esac
+done
+
+# MacOS Catalina uses a different path for the user homes
+mac_os_ver=`sw_vers -productVersion`
+case "$mac_os_ver" in
+ 10.15*)
+   # MacOS Catalina
+   volume_root=/System/Volumes/Data/Users
+   ;;
+ 10.14*)
+   # MacOS Mohave
+   volume_root=/Users
+   ;;
+ *) 
+   echo "Error: MacOS version $mac_os_ver is not supported. Only Mohave(10.14) and Catalina(10.15) are supported." >&2
+   exit 1
+   ;;
+esac
+
+# These variables are used when building image and running container
+export ipaddr
+export user
+export volume_root
+export armds_dir
+export armds_tgz
+export armds_installer
+export armds_installdir
+
+if $rebuild || ! docker images | grep -e '^docker_armds_armds\s\+latest' &> /dev/null; then
+    # Either the user passed in the --rebuild option or the image doesn't exist, so
+    # call the build script to build the image.
+    export group
+    export uid
+    export gid
+    ./build || exit 1
+fi
+
+# 
+# Packages Xquartz and socat are required on MacOS in order for GUI to function inside the 
+# container.  
+#
+# Check if socat is running and connected to port 6000
+if ! ps -e | grep -v grep | grep 'socat TCP-LISTEN:6000' &> /dev/null; then
+    # socat is not running.  Needed for GUI applications in container
+    # Try to start it
+    # Check if it's installed
+    if ! socat -V &> /dev/null; then
+        echo 'Warning: socat is not installed.  This package is necessary to run GUI applications from container. Install with "brew install socat"'
+    else
+        # socat is installed, setup bi-directional stream
+        echo Killing all Xquartz
+        killall Xquartz &> /dev/null
+        echo Starting socat...
+        socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\" &
+    fi
+fi
+
+# Check if Xquartz is running
+if ! ps -e | grep -v grep | grep Xquartz &> /dev/null; then
+    # Xquartz is not running.  Needed for GUI applications in container
+    # Try to start it
+    echo Starting Xquartz...
+    if ! open -a XQuartz; then
+        echo 'Warning: Could not start XQuartz. This package is necessary to run GUI applications from container. Install with "brew cask install xquartz"'
+    fi
+fi
+
+#
+# Run the armds application from the docker-compose.yml file.  If the --cmd option was specified, then
+# that command will be run inside the container. By default, with no --cmd option, an interactive
+# shell is opened.
+#
+args="--rm"
+if [ ! -z $name ]; then
+    args="$args --name $name"
+fi
+docker-compose run $args armds $cmd "$@"

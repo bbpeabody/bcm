@@ -1,15 +1,13 @@
 #!/bin/bash
 
 usage="
-usage: run [{-v|--vdiuser} <VDIUSERNAME>] [{-h|--vdihost} <VDIHOST>] [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [{-i|--ipaddr} <HOSTIP>] [--rebuild] [-c|--cmd <CMD>]"
+usage: run [{-v|--vdiuser} <VDIUSERNAME>] [{-h|--vdihost} <VDIHOST>] [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [--rebuild] [-c|--cmd <CMD>]"
 uservdi=bp892475
 hostvdi=ashvda3390.ash.broadcom.net
 user=$(id -un)
 group=$(id -gn)
 uid=$(id -u)
 gid=$(id -g)
-# Host IP address used for forwarding container's display to host for GUI apps
-ipaddr=`ifconfig en0 | grep -e 'inet\s\+\d\+\.\d\+\.\d\+\.\d\+' | cut -f2 -d " "`
 
 rebuild=false
 params=""
@@ -25,10 +23,6 @@ while (( "$#" )); do
        ;;
      -g|--group)
        group=$2
-       shift 2
-       ;;
-     -i|--ipaddr)
-       ipaddr=$2
        shift 2
        ;;
      -n|--name)
@@ -90,7 +84,6 @@ esac
 
 # These variables are used when building image and running container
 export uservdi
-export ipaddr
 export user
 export volume_root
 
@@ -102,36 +95,6 @@ if $rebuild || ! docker images | grep -e '^docker_bldr\s\+latest' &> /dev/null; 
     export uid
     export gid
     ./build || exit 1
-fi
-
-# 
-# Packages Xquartz and socat are required on MacOS in order for GUI to function inside the 
-# container.  
-#
-# Check if socat is running and connected to port 6000
-if ! ps -e | grep -v grep | grep 'socat TCP-LISTEN:6000' &> /dev/null; then
-    # socat is not running.  Needed for GUI applications in container
-    # Try to start it
-    # Check if it's installed
-    if ! socat -V &> /dev/null; then
-        echo 'Warning: socat is not installed.  This package is necessary to run GUI applications from container. Install with "brew install socat"'
-    else
-        # socat is installed, setup bi-directional stream
-        echo Killing all Xquartz
-        killall Xquartz &> /dev/null
-        echo Starting socat...
-        socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\" &
-    fi
-fi
-
-# Check if Xquartz is running
-if ! ps -e | grep -v grep | grep Xquartz &> /dev/null; then
-    # Xquartz is not running.  Needed for GUI applications in container
-    # Try to start it
-    echo Starting Xquartz...
-    if ! open -a XQuartz; then
-        echo 'Warning: Could not start XQuartz. This package is necessary to run GUI applications from container. Install with "brew cask install xquartz"'
-    fi
 fi
 
 #

@@ -1,16 +1,13 @@
 #!/bin/bash
 
-usage="usage: $0 {-c|--cov-build} {-s|--signed} [thor|chimp] [debug|release|all|clean]"
+usage="usage: $0 {-d [netxtreme_dir]} {-c|--cov-build} {-s|--signed} {--single} [thor|chimp] [debug|release|all|clean]"
 my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 docker_dir="$my_dir/../docker"
-thor_dir='/home/$(id -un)/git/netxtreme/main/Cumulus/firmware/THOR'
-chimp_dir='/home/$(id -un)/git/netxtreme/main/Cumulus/firmware/ChiMP/bootcode'
-cov_script=$thor_dir/cov
-signed_user=bp892475
-signed_pwd="$HOME/sign.txt"
+repo_dir='/home/$(id -un)/git/netxtreme'
 
 cov=false
 signed=false
+single=false
 PARAMS=""
 while (( "$#" )); do
   case "$1" in
@@ -20,6 +17,14 @@ while (( "$#" )); do
       ;;
     -s|--signed)
       signed=true
+      shift 1
+      ;;
+    -d|--directory)
+      repo_dir=$2
+      shift 2
+      ;;
+    --single)
+      single=true
       shift 1
       ;;
     --) # end argument parsing
@@ -40,10 +45,20 @@ done
 
 eval set -- "$PARAMS"
 
+thor_dir="$repo_dir/main/Cumulus/firmware/THOR"
+chimp_dir="$repo_dir/main/Cumulus/firmware/ChiMP/bootcode"
+cov_script=$thor_dir/cov
+signed_user=bp892475
+signed_pwd="$HOME/sign.txt"
+
 case $1 in
     thor)
         build_dir=$thor_dir
-        cmd="./make_thor_pkg.sh"
+        if [ "$single" = true ]; then
+            cmd="./make_thor_pkg.sh"
+        else
+            cmd="./make_thor_dual_pkg.sh"
+        fi
         args="RV=B"
         ;;
     chimp)

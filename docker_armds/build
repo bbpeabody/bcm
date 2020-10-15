@@ -23,7 +23,7 @@ done
 #
 # Check the environment and make sure all variables are defined
 #
-required_env=( uservdi hostvdi user group uid gid volume_root )
+required_env=( user group uid gid volume_root armds_tgz armds_dir armds_installer armds_installdir)
 for e in ${required_env[@]}; do
     if [ -z ${!e} ]; then
         echo "ERROR: Requires environment variable '$e'. Only run this script with 'run --rebuild'."
@@ -56,46 +56,6 @@ if [ ! -d $build_tools ]; then
 fi
 
 #
-# Check for ARM Developer's Studio files on the host system, and copy if not found
-#
-armcc="$build_tools/developmentstudio-2019.1/sw/ARMCompiler5.06u6/bin/armcc"
-armcc_archive="./armcc.tar.xz"
-if [ ! -x $armcc ]; then
-    echo "Installing armcc toolchain..."
-    tar -C $build_tools -xJf $armcc_archive || exit 1
-fi
-
-#
-# Check for tools on the host system.  If not found, retrieve them from users VDI instance and
-# install them.
-#
-host_ccx="$build_tools/ccxsw_tools"
-rmt_ccx="/projects/ccxsw_tools"
-if [ ! -d $host_ccx ]; then
-    echo "Creating directory $host_ccx..."
-    mkdir $host_ccx || exit 1
-fi
-required_tools=( \
-    mentor_graphics/mgc-2018.070 \
-    sbl_tools \
-    contrib \
-    coverity/2019.03/cov-analysis-linux64-2019.03 \
-)
-for tool in ${required_tools[@]}; do
-    host_tool="$host_ccx/$tool"
-    if [ ! -d $host_tool ]; then
-        echo "Creating directory $host_tool..."
-        mkdir -p $host_tool || exit 1
-        rmt_tool="$rmt_ccx/$tool"
-        echo "Copying $host_tool from VDI..."
-        ssh $uservdi@$hostvdi "   tmp=\`mktemp\` \
-                               && tar -C $rmt_tool -czf \$tmp . \
-                               && cat \$tmp \
-                               && rm \$tmp" | tar -C $host_tool -xzf - 
-    fi
-done
-
-#
 # Copy files needed to build container from home directory
 # All of these files are optional and will only be copied to the container if they exist.
 #
@@ -104,7 +64,7 @@ files_to_copy=( \
     ~/.bashrc \
     ~/.gitconfig \
     ~/.gitignore \
-    ~/.coverity_auth_key \
+    "$build_tools/$armds_tgz" \ 
 )
 for file in ${files_to_copy[@]}; do
     if [ -e $file ] && [ ! -e "./$(basename $file)" ]; then
@@ -115,4 +75,4 @@ done
 #
 # Finally build the container using the docker-compose.yml file
 #
-docker-compose --verbose build bldr
+docker-compose --verbose build armds

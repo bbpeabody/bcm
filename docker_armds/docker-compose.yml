@@ -1,16 +1,20 @@
 version: '3.3'
 services:
-    bldr:
+    armds:
         build:
             context: .
             args:
-                - uservdi
                 - user
                 - group
                 - uid
                 - gid
+                - armds_dir
+                - armds_tgz
+                - armds_installer
+                - armds_installdir
         environment:
-            USER: ${uservdi}
+            USER: ${user}
+            DISPLAY: ${ipaddr}:0
         env_file:
             - armcc.env
         volumes:
@@ -25,7 +29,16 @@ services:
             - type: volume
               source: git
               target: /home/${user}/git
-        hostname: bldr
+            - type: volume
+              source: arm
+              target: /home/${user}/.arm
+            - type: volume
+              source: config_arm
+              target: /home/${user}/.config/arm
+            - type: volume
+              source: developmentstudio_workspace
+              target: /home/${user}/developmentstudio-workspace
+        hostname: armds
         working_dir: /home/${user}/git
         user: ${user}
         privileged: true
@@ -51,3 +64,21 @@ volumes:
             type: nfs
             o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
             device: :${volume_root}/${user}/git
+    arm:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+            device: :${volume_root}/${user}/.arm
+    config_arm:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+            device: :${volume_root}/${user}/.config/arm
+    developmentstudio_workspace:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+            device: :${volume_root}/${user}/developmentstudio-workspace
