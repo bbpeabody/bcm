@@ -1,0 +1,206 @@
+# Set to debug, info, warning, error, or critical
+# Override on command line with -v, -vv, -vvv
+verbosity: info
+
+# Package to install. If package is empty string, then the SIT package will be installed.
+# Override on command line with -p, --package
+package: ''
+
+# Interface to use. By default, all interfaces for a given server are acted upon.
+# Override on command line with -i, --interface
+interface: ''
+
+# Use auto-negotiation when bringing up a port.
+# Override on command line with -a, --autoneg
+autoneg: False
+
+# Speed to use.  Exactly one speed when forced.  Multiple speeds can be specified in a list for autoneg.
+# Override on command line with -s, --speed
+speed: []
+
+# Follow trace like tail -f.
+# Override on command line with -f
+tail: False
+
+aurora:
+  repo_url: http://gitlab-ccxsw.lvn.broadcom.net/aurora/au-common.git
+  # Path to local au-common. Will be synced to remote
+  # Override on command line with -l, --local
+  local_aucommon: ~/git/aurora/au-common
+  # Path to remote au-common. Path that will be synced on the remote
+  # Override on command line with -r, --remote
+  remote_aucommon: /root/au-common
+  # Completely remove aucommon from remote before syncing
+  # Override on command line with --delete
+  delete: False
+
+rpyc:
+  # Aurora RPyC uses 3737, so choose a different port for our RPyC server
+  port: 3738
+  remote_path: /root/server_utils
+  # Restart RPyC server on remote server
+  # Override on command line with --rpyc-restart
+  restart: False
+
+sit_url: https://eca-ccxsw.lvn.broadcom.net/releases/nxe/SIT
+
+servers:
+
+  shaper:
+    addr: 10.27.215.99
+    user: root
+    password: brcm
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - p1p1
+        - p1p2
+    oob_mgmt:
+      addr: 10.27.215.96
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  domino:
+    addr: 10.27.215.84
+    user: root
+    password: brcm
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - p1p1
+        - p1p2
+    oob_mgmt:
+      addr: 10.27.215.192
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  rail-centos:
+    addr: 10.27.23.209
+    user: root
+    password: brcm
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - p1p1
+        - p1p2
+    oob_mgmt:
+      addr: 10.27.21.60
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  stile-centos:
+    addr: 10.27.22.69
+    user: root
+    password: brcm
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - p1p1
+        - p1p2
+    oob_mgmt:
+      addr: 10.27.21.61
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  rail:
+    addr: 10.27.23.209
+    user: root
+    password: brcm
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - ens1f0np0
+        - ens1f1np1
+    oob_mgmt:
+      addr: 10.27.21.60
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  stile:
+    addr: 10.27.22.69
+    user: root
+    password: brcm
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - ens1f0np0
+        - ens1f1np1
+    oob_mgmt:
+      addr: 10.27.21.61
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  h168:
+    addr: 10.13.241.168
+    user: root
+    password: root
+    nic:
+      pci_bdf: "04:00.0"
+      interfaces:
+        - p2p1
+        - p2p2
+    oob_mgmt:
+      addr: 10.13.243.168
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  h169:
+    addr: 10.13.241.169
+    user: root
+    password: root
+    nic:
+      pci_bdf: "05:00.0"
+      interfaces:
+        - p1p1
+        - p1p2
+    oob_mgmt:
+      addr: 10.13.243.169
+      user: root
+      password: calvin
+      port: 443
+      sys_id: System.Embedded.1
+
+  mr_sut:
+    addr: 10.13.238.116
+    user: root
+    password: br0adc0m$
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - p1p1
+    oob_mgmt:
+      addr: 10.13.239.116
+      user: root
+      password: br0adc0m$
+      port: 443
+      sys_id: System.Embedded.1
+
+  mr_client:
+    addr: 10.13.238.115
+    user: root
+    password: br0adc0m$
+    nic:
+      pci_bdf: "65:00.0"
+      interfaces:
+        - p1p1
+        - p1p2
+    oob_mgmt:
+      addr: 10.13.239.115
+      user: root
+      password: br0adc0m$
+      port: 443
+      sys_id: System.Embedded.1

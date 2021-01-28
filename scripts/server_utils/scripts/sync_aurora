@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+
+from server_utils import script_args
+from server_utils.aurora import Aurora
+from server_utils.config import config
+from server_utils.threading import start_threads
+
+log = logging.getLogger('server_utils')
+
+
+def sync_aurora(server):
+    local = config['aurora']['local_aucommon'].get(str)
+    remote = config['aurora']['remote_aucommon'].get(str)
+    delete = config['aurora']['delete'].get(bool)
+    aurora = Aurora(server, local, remote)
+    if delete:
+        log.info("Deleting remote au-common...")
+        aurora.delete()
+    log.info("Syncing au-common...")
+    aurora.sync()
+    log.info("Restarting Aurora RPyC server...")
+    aurora.restart_rpyc()
+    log.info("Finished")
+
+
+def main(args):
+    parser = argparse.ArgumentParser(description="Sync the Aurora library au-common with the local au-common and"
+                                                 "restart the RPyC server on the remote.")
+    script_args.add_aurora_arg(parser)
+    script_args.add_verbose_arg(parser)
+    script_args.add_server_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    start_threads(sync_aurora, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

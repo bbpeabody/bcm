@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+
+from server_utils import script_args
+from server_utils.threading import start_threads
+
+log = logging.getLogger('server_utils')
+
+
+def inventory(server):
+    log.info(server.inventory.all_properties())
+
+
+def main(args):
+    # Setup command line options
+    parser = argparse.ArgumentParser(description="Print inventory details of server.")
+    script_args.add_verbose_arg(parser)
+    script_args.add_server_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    # Force logging level to a minimum of INFO level so inventory is printed to console
+    if args.verbose != logging.DEBUG:
+        args.verbose = logging.INFO
+    # Start a process for each server
+    start_threads(inventory, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

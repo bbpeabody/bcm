@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Pass in the option --server to create a virtual environment on the RPyC server.  setup.py will use the environment
+# variable SERVER_UTILS_RPYC_SERVER to install a different set of requirements on the server.
+server=false
+if [ ! -z $1 ]; then
+  if [ $1 = '--server' ]; then
+      server=true
+      export SERVER_UTILS_RPYC_SERVER=1
+  fi
+fi
+
+# On different distributions of Linux/Mac virtualenv name can be different.
+#command -v virtualenv-3
+#if [ $? -eq 0  ]
+#then
+#    virtualenv-3 -q -p python3 venv
+#
+#else command -v virtualenv
+#    if [ $? -eq 0  ]
+#    then
+#        virtualenv -q -p python3 venv
+#    else
+#      echo "Can find virtualenv command. Is it installed?"
+#      exit 1
+#    fi
+#fi
+python3 -m pip install --upgrade pip || { echo "Python pip install failed. Cannot create virtual environment."; exit 1; }
+python3 -m pip install --upgrade virtualenv || { echo "Python virtualenv install failed. Cannot create virtual environment."; exit 1; }
+python3 -m venv venv || { echo "Failed to create virtual environment."; exit 1; }
+
+# Install server_utils package and dependencies into the virtual environment
+source venv/bin/activate || { echo "Cannot activate virtual environment."; exit 1; }
+pip install . || { echo "An error occurred while installing server_utils."; exit 1; }
+
+# Run script to generate the hwrm python module from the nitro-headers repos.  The script will be run with default options.
+# If the script fails, the user will need to run it manually and supply necessary options.  make_hwrm.py -h will show
+# all available options.  The hwrm module is only installed in the client's venv.  RPyC servers do not use the hwrm
+# module.
+if [ $server = false ]; then
+    python3 venv/bin/make_hwrm.py -y
+    if [ $? -eq 0 ]; then
+        echo "The hwrm module has benn built successfully and installed in the virtual environment"
+    else
+        echo "Failed to build hwrm module. This is probably a permissions failure. Please run the make_hwrm.py script"
+        echo "manually and supply necessary options. make_hwrm.py -h will display help."
+        exit 1
+    fi
+fi
+
+echo ""
+echo "The virtualenv has been created and project installed."
+echo "Please activate the environment using source venv/bin/activate"
+

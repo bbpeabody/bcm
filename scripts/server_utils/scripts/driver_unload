@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+
+from server_utils import script_args
+from server_utils.config import config
+from server_utils.driver import Driver
+from server_utils.sit import Sit
+from server_utils.threading import start_threads
+
+log = logging.getLogger('server_utils')
+
+
+def driver_unload(server):
+    sit = config['sit'].get(str)
+    sit_url = config['sit_url'].get(str)
+    sit = Sit(server, sit, sit_url)
+    driver = Driver(sit, server)
+    log.info(f"Unloading bnxt_en driver...")
+    if not driver.unload():
+        log.critical("Failed to unload drivers.")
+        sys.exit(1)
+    log.info(f"Finished")
+
+
+def main(args):
+    parser = argparse.ArgumentParser(description="Unload bnxt_en, bnxt_re, bnxtmtdrv, and devlink drivers.")
+    script_args.add_verbose_arg(parser)
+    script_args.add_server_arg(parser)
+    script_args.add_sit_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    start_threads(driver_unload, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

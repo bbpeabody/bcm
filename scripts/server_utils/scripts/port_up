@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+from time import sleep
+
+from server_utils import script_args
+from server_utils.config import config
+from server_utils.driver import Driver
+from server_utils.ethtool import Ethtool
+from server_utils.helpers import list_to_string
+from server_utils.ip import Ip
+from server_utils.sit import Sit
+from server_utils.threading import start_threads
+
+log = logging.getLogger('server_utils')
+
+
+def port_up(server):
+    sit = config['sit'].get(str)
+    sit_url = config['sit_url'].get(str)
+    interface = config['interface'].get(str)
+    autoneg = config['autoneg'].get(bool)
+    speeds = config['speed'].get(list)
+    sit = Sit(server, sit, sit_url)
+    driver = Driver(sit, server)
+    ethtool = Ethtool(server)
+    ip = Ip(server)
+    if not driver.is_loaded():
+        driver.load()
+        sleep(1)
+    if not interface:
+        # Bring all the interfaces up
+        interfaces = config['servers'][server.name]['nic']['interfaces'].get(list)
+    else:
+        # Only bring up the single interace specified in the config file or the command line
+        interfaces = [interface]
+    for interface in interfaces:
+        log.info(f"Setting interface {interface} link down...")
+        ip.link_down(interface)
+        if autoneg:
+            if speeds:
+                log.info(f"Setting interface {interface} to autoneg. Advertised speeds: {list_to_string(speeds)}.")
+                ethtool.autoneg(interface, speeds)
+            else:
+                log.info(f"Setting interface {interface} to autoneg.")
+                ethtool.autoneg(interface)
+        else:
+            if not speeds:
+                speed = ethtool.highest_supported_speed(interface)
+            else:
+                speed = speeds[0]
+            log.info(f"Setting interface {interface} speed to {speed}...")
+            ethtool.forced_speed(interface, speed)
+        log.info(f"Setting interface {interface} link up...")
+        ip.link_up(interface)
+    for interface in interfaces:
+        if ip.wait_link_up(interface):
+            log.info(f"Interface {interface} is up with speed of {ethtool.speed(interface)}.")
+        else:
+            log.warning(f"Timed out waiting for interface {interface} to link up.")
+    log.info("Finished")
+
+
+def main(args):
+    parser = argparse.ArgumentParser(description="Set link down, configure speed, and set link up on all interfaces "
+                                                 "defined on the server. By default, the speed will be set to highest"
+                                                 "supported speed for the port.")
+    script_args.add_server_arg(parser)
+    script_args.add_autoneg_arg(parser)
+    script_args.add_interface_arg(parser)
+    script_args.add_sit_arg(parser)
+    script_args.add_speed_arg(parser)
+    script_args.add_verbose_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    start_threads(port_up, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

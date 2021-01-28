@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+from copy import copy
+from multiprocessing import Queue
+from time import sleep
+
+from server_utils import script_args
+from server_utils.config import config
+from server_utils.threading import start_threads
+from server_utils.driver import Driver
+
+log = logging.getLogger('server_utils')
+
+
+def trace(server):
+    driver_unload = config['driver_unload'].get(bool)
+    if driver_unload:
+        driver = Driver(None, server)
+        driver.unload()
+    pci_bdf = config['servers'][server.name]['nic']['pci_bdf'].get(str)
+    follow = config['tail'].get(bool)
+    rtrace = server.import_module("server_utils.nitro.trace")
+    rthreading = server.import_module("server_utils.threading")
+    trace = rtrace.Trace(pci_bdf)
+    queue = Queue()
+    thread = rthreading.KillableThread(trace.trace, [queue, follow])
+    server.register_thread(thread)
+    thread.start()
+    while True:
+        while(not queue.empty()):
+            buffer = copy(queue.get())
+            print(buffer, end='', flush=True)
+        if thread.is_alive():
+            sleep(.1)
+        else:
+            break
+    thread.join()
+
+
+def main(args):
+    # Setup command line options
+    parser = argparse.ArgumentParser(description="Dump the primate trace for the server")
+    script_args.add_server_arg(parser, 1)
+    script_args.add_tail_arg(parser)
+    script_args.add_rpyc_restart_arg(parser)
+    script_args.add_driver_unload_arg(parser)
+    script_args.add_verbose_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    # Start a thread for each server
+    start_threads(trace, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

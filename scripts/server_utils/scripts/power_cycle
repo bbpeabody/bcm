@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+
+from server_utils import script_args
+from server_utils.config import config
+from server_utils.ping import wait_pingable
+from server_utils.redfish import Redfish, is_redfish_supported
+from server_utils.threading import start_threads
+
+log = logging.getLogger('server_utils')
+
+
+def power_cycle(server):
+    oob_mgmt = config['servers'][server.name]['oob_mgmt']
+    ip = oob_mgmt['addr'].get(str)
+    port = oob_mgmt['port'].get(int)
+    user = oob_mgmt['user'].get(str)
+    password = oob_mgmt['password'].get(str)
+    sys_id = oob_mgmt['sys_id'].get(str)
+    if is_redfish_supported(addr=ip,
+                            port=port,
+                            login=user,
+                            password=password):
+        redfish = Redfish(addr=ip,
+                          port=port,
+                          login=user,
+                          password=password,
+                          sys_id=sys_id,
+                          sys_name=server.name)
+        log.info("Power cycling...")
+        redfish.powercycle()
+        if redfish.is_powered_on():
+            log.info("System is powered ON. Waiting for system to become responsive...")
+            if wait_pingable(config['servers'][server.name]['addr'].as_str()):
+                log.info("System is up.")
+            else:
+                log.warning("Timed out waiting for ping response.")
+        else:
+            log.error("System did not power ON.")
+            sys.exit(1)
+    else:
+        log.error("Redfish API is not supported for server 'server_name'. Unable to power cycle.")
+        sys.exit(1)
+
+
+def main(args):
+    parser = argparse.ArgumentParser(description="Turn power off and on.")
+    script_args.add_server_arg(parser)
+    script_args.add_verbose_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    start_threads(power_cycle, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

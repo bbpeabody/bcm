@@ -1,0 +1,7 @@
+confuse
+paramiko
+bs4
+requests
+pexpect
+wget
+rpyc

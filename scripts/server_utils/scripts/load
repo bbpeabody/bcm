@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+from time import sleep
+
+from server_utils import script_args
+from server_utils.bnxtmt import Bnxtmt
+from server_utils.bnxtnvm import Bnxtnvm
+from server_utils.config import config
+from server_utils.driver import Driver
+from server_utils.nic import Nic
+from server_utils.sit import Sit
+from server_utils.threading import start_threads
+
+log = logging.getLogger('server_utils')
+
+
+def load(server):
+    sit = config['sit'].get(str)
+    sit_url = config['sit_url'].get(str)
+    live = config['live'].get(bool)
+    package = config['package'].get(str)
+    pci_bdf = config['servers'][server.name]['nic']['pci_bdf'].get(str)
+    interfaces = config['servers'][server.name]['nic']['interfaces'].get(list)
+    sit = Sit(server, sit, sit_url)
+    driver = Driver(sit, server)
+    bnxtmt = Bnxtmt(sit, server)
+    bnxtnvm = Bnxtnvm(sit, server)
+    nic = Nic(pci_bdf, interfaces, bnxtmt, server.inventory)
+    if live:
+        # --live option, use bnxtnvm
+        log.info(f"Loading bnxt_en driver...")
+        driver.load()
+        sleep(5)
+        if package:
+            log.info(f"Installing package {package} using bnxtnvm...")
+            bnxtnvm.install_pkg(package, nic)
+        else:
+            log.info(f"Installing SIT package {sit.version} using bnxtnvm...")
+            bnxtnvm.install_sit(nic)
+    else:
+        # No --live option, use bnxtmt
+        log.info(f"Unloading bnxt_en driver...")
+        if not driver.unload():
+            log.critical("Cannot use bnxtmt to load firmware because driver cannot be unloaded. Try using load "
+                         "--live.")
+            sys.exit(1)
+        if package:
+            log.info(f"Installing package {package} using bnxtmt...")
+            bnxtmt.install_pkg(package, nic)
+        else:
+            log.info(f"Installing SIT package {sit.version} using bnxtmt...")
+            bnxtmt.install_sit(nic)
+        log.info(f"Loading bnxt_en driver...")
+        # Added delay for DUAL thor image.  Without the delay, the interfaces are not enumerated.
+        sleep(1)
+        driver.load()
+    log.info(f"Finished")
+
+
+def main(args):
+    parser = argparse.ArgumentParser(description="Install SIT package or local package and reset NIC on server. "
+                                                 "By default a SIT package is installed. Use --package option to "
+                                                 "install package from file.")
+    script_args.add_verbose_arg(parser)
+    script_args.add_server_arg(parser)
+    script_args.add_live_arg(parser)
+    script_args.add_sit_arg(parser)
+    script_args.add_package_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    start_threads(load, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

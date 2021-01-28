@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+from copy import deepcopy
+from multiprocessing import Queue
+from time import sleep
+from ctypes import sizeof
+
+from hwrm import HwrmCmdHdr, HwrmRespHdr, get_class, HwrmReqType, HwrmErrOutput, HwrmExecFwdRespInput
+
+from server_utils import script_args
+from server_utils.config import config
+from server_utils.threading import start_threads
+from server_utils.driver import Driver
+from server_utils.sit import Sit
+from server_utils.bnxtmt import Bnxtmt
+from server_utils.nic import Nic
+from server_utils.nitro.hwrm_msg_compact import HwrmMsgCompact
+
+log = logging.getLogger('server_utils')
+msg_cnt = 0
+
+
+def hwrm(server):
+    sit = config['sit'].get(str)
+    sit_url = config['sit_url'].get(str)
+    nic_cfg = config['servers'][server.name]['nic']
+    pci_bdf = nic_cfg['pci_bdf'].get(str)
+    interfaces = nic_cfg['interfaces'].get(list)
+    sit = Sit(server, sit, sit_url)
+    bnxtmt = Bnxtmt(sit, server)
+    nic = Nic(pci_bdf, interfaces, bnxtmt, server.inventory)
+    bnxtmt.killall()
+    bnxtmt.unlock_grc(nic)
+    driver_unload = config['driver_unload'].get(bool)
+    if driver_unload:
+        driver = Driver(None, server)
+        driver.unload()
+    #pci_bdf = config['servers'][server.name]['nic']['pci_bdf'].get(str)
+    follow = config['tail'].get(bool)
+    rhwrm_history = server.import_module("server_utils.nitro.hwrm_history")
+    rthreading = server.import_module("server_utils.threading")
+    hwrm_history = rhwrm_history.HwrmHistory(pci_bdf, config['filter_mask'].get(int))
+    queue = Queue()
+    thread = rthreading.KillableThread(hwrm_history.get_history, [queue, follow])
+    server.register_thread(thread)
+    thread.start()
+    while True:
+        while(not queue.empty()):
+            hwrm_msgs = deepcopy(queue.get())
+            for hwrm_msg in hwrm_msgs:
+                print_hwrm_msg(hwrm_msg)
+        if thread.is_alive():
+            sleep(.1)
+        else:
+            break
+    thread.join()
+
+
+def get_hwrm_type(hwrm_msg):
+    is_response = not hwrm_msg.request
+    if is_response:
+        header = HwrmRespHdr()
+    else:
+        header = HwrmCmdHdr()
+    header.cstruct = header._cstruct_type.from_buffer(hwrm_msg.bytes)
+    header.copy_from_cstruct()
+    return header.req_type
+
+
+def is_enabled(req_type):
+    includes = config['hwrm_include'].get(list)
+    excludes = config['hwrm_exclude'].get(list)
+    req_type = str(HwrmReqType(req_type)).lower()
+    if includes:
+        for include in includes:
+            if include.lower() in req_type:
+                return True
+        return False
+    if excludes:
+        for exclude in excludes:
+            if exclude.lower() in req_type:
+                return False
+        return True
+    return True
+
+
+def print_hwrm_msg(hwrm_msg):
+    req_type = get_hwrm_type(hwrm_msg)
+    global msg_cnt
+    buffer = ""
+    if is_enabled(req_type):
+        if hwrm_msg.request:
+            msg_type = "REQUEST"
+        else:
+            msg_type = "RESPONSE"
+        print("\n" + "=" * 80)
+        hwrm_class = get_class(req_type, not hwrm_msg.request)
+        hwrm_req_resp = hwrm_class()
+        cstruct_type = hwrm_req_resp._cstruct_type
+        buffer_size = len(hwrm_msg.bytes)
+        if sizeof(cstruct_type) > buffer_size:
+            # The HWRM debug buffers are only 128 bytes. Some HWRM messages are larger than 128. Pad out bytes with
+            # zeros.
+            pad_size = sizeof(cstruct_type) - buffer_size
+            for _ in range(pad_size):
+                hwrm_msg.bytes.append(0)
+            buffer += f"WARNING: Only first {buffer_size} bytes are valid. Message was truncated.\n"
+        hwrm_req_resp.cstruct = cstruct_type.from_buffer(hwrm_msg.bytes)
+        hwrm_req_resp.copy_from_cstruct()
+        if not hwrm_msg.request and hwrm_req_resp.hwrm_resp_hdr.error_code != 0:
+            # Error response, so cast to hwrm_err_output
+            hwrm_req_resp = HwrmErrOutput()
+            hwrm_req_resp.cstruct = hwrm_req_resp._cstruct_type.from_buffer(hwrm_msg.bytes)
+            hwrm_req_resp.copy_from_cstruct()
+            msg_type += " ERROR"
+        buffer += f"#{msg_cnt:06d} - {hwrm_msg.index + 1}/{hwrm_msg.max_entries} {msg_type}  " + \
+                  f"time: {hwrm_msg.time} chan:{hwrm_msg.channel}\n"
+        buffer += str(hwrm_req_resp)
+        if hwrm_msg.request and isinstance(hwrm_req_resp, HwrmExecFwdRespInput):
+            # If this is a forwarded request, decode the encapsulated request.
+            hwrm_msg = HwrmMsgCompact()
+            hwrm_msg.request = True
+            hwrm_msg.bytes = bytearray(hwrm_req_resp.cstruct.encap_request)
+            req_type = get_hwrm_type(hwrm_msg)
+            hwrm_class = get_class(req_type, False)
+            hwrm_req_resp = hwrm_class()
+            cstruct_type = hwrm_req_resp._cstruct_type
+            #buffer_size = len(hwrm_msg.bytes)
+            #if sizeof(cstruct_type) > buffer_size:
+            #    # The HWRM debug buffers are only 128 bytes. Some HWRM messages are larger than 128. Pad out bytes with
+            #    # zeros.
+            #    pad_size = sizeof(cstruct_type) - buffer_size
+            #    for _ in range(pad_size):
+            #        hwrm_msg.bytes.append(0)
+            #    buffer += f"WARNING: Only first {buffer_size} bytes are valid. Message was truncated.\n"
+            hwrm_req_resp.cstruct = cstruct_type.from_buffer(hwrm_msg.bytes)
+            hwrm_req_resp.copy_from_cstruct()
+            if not hwrm_msg.request and hwrm_req_resp.hwrm_resp_hdr.error_code != 0:
+                # Error response, so cast to hwrm_err_output
+                hwrm_req_resp = HwrmErrOutput()
+                hwrm_req_resp.cstruct = hwrm_req_resp._cstruct_type.from_buffer(hwrm_msg.bytes)
+                hwrm_req_resp.copy_from_cstruct()
+                msg_type += " ERROR"
+            buffer += f"\n\nEncapsulated REQUEST\n"
+            encap_req_str = str(hwrm_req_resp)
+            for line in encap_req_str.splitlines():
+                buffer += f"    {line}\n"
+
+        print(buffer)
+        msg_cnt += 1
+
+
+def main(args):
+    # Setup command line options
+    parser = argparse.ArgumentParser(description="Dump the primate HWRM history for the server.")
+    script_args.add_server_arg(parser, 1)
+    script_args.add_tail_arg(parser)
+    script_args.add_hwrm_include_exclude_arg(parser)
+    script_args.add_filter_mask_arg(parser)
+    script_args.add_rpyc_restart_arg(parser)
+    script_args.add_sit_arg(parser)
+    script_args.add_driver_unload_arg(parser)
+    script_args.add_verbose_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    # Start a thread for each server
+    start_threads(hwrm, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

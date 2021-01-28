@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import sys
+from time import sleep
+
+log = logging.getLogger('server_utils')
+
+from server_utils import script_args
+from server_utils.sit import Sit
+from server_utils.driver import Driver
+from server_utils.bnxtmt import Bnxtmt
+from server_utils.config import config
+from server_utils.threading import start_threads
+from server_utils.nic import Nic
+
+
+def reset_cfg(server):
+    sit = config['sit'].get(str)
+    sit_url = config['sit_url'].get(str)
+    nic_cfg = config['servers'][server.name]['nic']
+    pci_bdf = nic_cfg['pci_bdf'].get(str)
+    interfaces = nic_cfg['interfaces'].get(list)
+    sit = Sit(server, sit, sit_url)
+    driver = Driver(sit, server)
+    bnxtmt = Bnxtmt(sit, server)
+    nic = Nic(pci_bdf, interfaces, bnxtmt, server.inventory)
+    bnxtmt.killall()
+    log.info(f"Unloading bnxt_en driver...")
+    driver.unload()
+    log.info(f"Resetting config on PCI {pci_bdf}, bnxtmt device {nic.bnxtmt_device}...")
+    bnxtmt.reset_cfg(nic)
+    log.info(f"Loading bnxt_en driver...")
+    sleep(1)
+    driver.load()
+    log.info(f"Finished")
+
+
+def main(args):
+    parser = argparse.ArgumentParser(description="Reset NIC config to factory using bnxtmt.")
+    script_args.add_verbose_arg(parser)
+    script_args.add_server_arg(parser)
+    script_args.add_sit_arg(parser)
+    args = parser.parse_args(args)
+    script_args.validate_args(args)
+    start_threads(reset_cfg, args.server, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
