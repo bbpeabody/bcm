@@ -8,7 +8,7 @@ from server_utils import script_args
 from server_utils.config import config
 from server_utils.ping import wait_pingable
 from server_utils.redfish import Redfish, is_redfish_supported
-from server_utils.threading import start_threads
+from server_utils.threading_utils import start_threads
 
 log = logging.getLogger('server_utils')
 

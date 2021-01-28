@@ -9,7 +9,7 @@ from time import sleep
 
 from server_utils import script_args
 from server_utils.config import config
-from server_utils.threading import start_threads
+from server_utils.threading_utils import start_threads
 from server_utils.driver import Driver
 
 log = logging.getLogger('server_utils')

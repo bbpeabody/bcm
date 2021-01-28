@@ -12,7 +12,7 @@ from server_utils.ethtool import Ethtool
 from server_utils.helpers import list_to_string
 from server_utils.ip import Ip
 from server_utils.sit import Sit
-from server_utils.threading import start_threads
+from server_utils.threading_utils import start_threads
 
 log = logging.getLogger('server_utils')
 

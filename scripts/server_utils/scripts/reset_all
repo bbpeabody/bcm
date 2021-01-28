@@ -10,7 +10,7 @@ from server_utils.config import config
 from server_utils.driver import Driver
 from server_utils.nic import Nic
 from server_utils.sit import Sit
-from server_utils.threading import start_threads
+from server_utils.threading_utils import start_threads
 
 log = logging.getLogger('server_utils')
 
