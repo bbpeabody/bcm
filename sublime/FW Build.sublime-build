@@ -1,0 +1,27 @@
+{
+    "target": "fw_build",
+    "cancel": {"kill": true},
+    "selector": "source.c",
+    "variants": [
+        {
+            "name": "Thor Release",
+            "build_type": "release",
+            "chip": "thor"
+        },
+        {
+            "name": "Thor Debug",
+            "build_type": "debug",
+            "chip": "thor"
+        },
+        {
+            "name": "ChiMP Release",
+            "build_type": "release",
+            "chip": "chimp"
+        },
+        {
+            "name": "ChiMP Debug",
+            "build_type": "debug",
+            "chip": "chimp"
+        }
+    ]
+}

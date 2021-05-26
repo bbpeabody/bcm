@@ -1,0 +1,3 @@
+#!/bin/bash
+
+fswatch -r -e -l 10 \/\.git /Users/bpeabody/git/netxtreme | xargs -n1 -I{} /Users/bpeabody/git/bcm/scripts/cscope_netxtreme &
