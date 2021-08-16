@@ -44,6 +44,11 @@ rpyc:
 
 sit_url: https://eca-ccxsw.lvn.broadcom.net/releases/nxe/SIT
 
+# By default the $HOME directory of the root user will be used to store SIT releases,
+# tools, etc.  Typically, this is
+# /root.
+server_remote_dir: ""
+
 servers:
 
   shaper:

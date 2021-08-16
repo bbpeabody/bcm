@@ -21,3 +21,7 @@ popd &> /dev/null
 if [ -f "$file" ]; then
     rm $tmp_file
 fi
+
+if [ -f "$local_decode_coredump_dir/nvram.data" ]; then
+    cp "$local_decode_coredump_dir/nvram.data" .
+fi

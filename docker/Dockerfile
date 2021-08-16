@@ -84,6 +84,10 @@ WORKDIR /home/$user
 COPY .*  ./
 RUN chown $user:$group .*
 
+# Install kernel header files required for bnxtmt build 
+COPY kernel-devel-3.10.0-957.27.2.el7.x86_64.rpm ./
+RUN rpm -i --force kernel-devel-3.10.0-957.27.2.el7.x86_64.rpm
+
 # Create a link to the ccxsw_tools.  Make expects them to be in /projects
 RUN mkdir /projects \
     && ln -s /mnt/build_tools/ccxsw_tools /projects/ccxsw_tools

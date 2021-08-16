@@ -181,17 +181,17 @@ def update(hostname, username, password, device):
     print(f"{hostname}: Bringing ports up.")
     ports_up(conn)
 
+if __name__ == '__main__':
+    processes = []
+    #for server in [DOMINO, SHAPER]:
+    for server in [RAIL, STILE]:
+        p = mp.Process(target=update, args=(server["addr"],
+                                            server["username"],
+                                            server["password"],
+                                            server["bnxtmt_device"]))
+        p.start()
+        processes.append(p)
 
-processes = []
-#for server in [DOMINO, SHAPER]:
-for server in [RAIL, STILE]:
-    p = mp.Process(target=update, args=(server["addr"],
-                                        server["username"],
-                                        server["password"],
-                                        server["bnxtmt_device"]))
-    p.start()
-    processes.append(p)
-
-for p in processes:
-    p.join()
+    for p in processes:
+        p.join()
 

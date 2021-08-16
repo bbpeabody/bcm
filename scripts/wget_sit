@@ -7,9 +7,7 @@ declare list_rel
 declare sit_rel 
 
 
-sit_dir="https://eca-ccxsw.irv.broadcom.com/releases/nxe/SIT/"
-#sit_dir="https://eca-ccxsw.irv.broadcom.com/releases/nxe/SIT/216.0/"
-#         https://eca-ccxsw.irv.broadcom.com/releases/nxe/SIT/215.0/
+sit_dir="https://eca-ccxsw.lvn.broadcom.net/releases/nxe/SIT/"
 
 function validate_url(){
     if [[ `wget -S --no-check-certificate --spider $1 2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then
@@ -18,6 +16,11 @@ function validate_url(){
         echo "false"
     fi
 
+}
+
+function mkcd(){
+    mkdir $1
+    cd $1
 }
 
 
@@ -72,12 +75,26 @@ function get_sit(){
     dir=$1
     rel=$2
 
-    url="$dir/$rel"
+    echo "sit_dir $dir  sit_rel $rel"
+
+    f1=$(echo $rel | cut -d'.' -f1)
+    f2=$(echo $rel | cut -d'.' -f2)
+    f3=$(echo $rel | cut -d'.' -f3)
+    f4=$(echo $rel | cut -d'.' -f4)
+#    sit_dir="${sit_dir}${f1}.${f2}.${f3}"
+    sit_dir="${dir}${f1}.${f2}"
+    url="$sit_dir/$rel"
+
     ret=$(validate_url $url)
-    
     if [[ $ret == 'false' ]]; then
-        echo "Unknown SIT url $url"
-        exit -1
+        echo "$url not found"
+        sit_dir="${dir}${f1}.${f2}.${f3}"
+        url="$sit_dir/$rel"
+        ret=$(validate_url $url)
+        if [[ $ret == 'false' ]]; then
+            echo "$url not found"
+            exit -1
+        fi
     fi
     
     mkdir $rel
@@ -85,41 +102,47 @@ function get_sit(){
     
     # bnxtmt
     wget --no-check-certificate -l1  -nd -r  --no-parent --no-check-certificate -A 'bnxtmt-*x86_64.tar.gz'   "$url/bnxtmt/Linux/TH_A"
+    wget --no-check-certificate -l1  -nd -r  --no-parent --no-check-certificate -A 'bnxtmt-*x86_64.k406.tar.gz'   "$url/bnxtmt/Linux/TH_A"
     tar -xzvf bnxtmt*x86_64.tar.gz
 
     
     
     
-    wget --no-check-certificate "$url/bnxtnvm/Linux/Debug/bnxtnvm"
+    wget --no-check-certificate "$url/bnxtnvm/Linux/Release/bnxtnvm"
+    wget --no-check-certificate "$url/bnxtnvm/Linux/Debug/bnxtnvm-debug"
     chmod a+x bnxtnvm
+    chmod a+x bnxtnvm-debug
     wget --no-check-certificate "$url/bnxtqos/bnxtqos"
     chmod a+x bnxtqos
     
-    mkdir signed
-    cd signed
-#    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files"
-    mkdir THOR_B0
-    cd THOR_B0
-    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_B0/Signed/ABPROD-SRT"
-    mkdir Facebook
-    cd Facebook
-    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_B0/Signed/ABPROD-SRT/Facebook"
-    cd ../../..
-#    mkdir unsigned
-#    cd unsigned
-#    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/Unsigned"
-#    mkdir THOR_B0
-#    cd THOR_B0
-#    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_B0/Unsigned"
-#    cd ../..
+    pkg_url=$url/Board_Pkg_files/THOR_B0
+    if [[ $(validate_url $pkg_url) == 'true' ]]; then
+    	mkcd signed
+    	mkcd THOR_B0
+    	wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$pkg_url/Signed/ABPROD-SRT"
+    	mkcd Facebook
+    	wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$pkg_url/Signed/ABPROD-SRT/Facebook"
+        cd ../../..
+    fi
 
-    mkdir THOR_DUAL_B0
-    cd THOR_DUAL_B0
-    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_DUAL_B0/Signed/ABPROD-SRT"
-    mkdir Facebook
-    cd Facebook
-    wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$url/Board_Pkg_files/THOR_DUAL_B0/Signed/ABPROD-SRT/Facebook"
-    cd ../..
+    pkg_url=$url/Board_Pkg_files/THOR_DUAL_B0
+    if [[ $(validate_url $pkg_url) == 'true' ]]; then
+    	mkcd THOR_DUAL_B0
+        wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$pkg_url/Signed/ABPROD-SRT"
+	mkcd Facebook
+	wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$pkg_url/Signed/ABPROD-SRT/Facebook"
+	cd ../..
+    fi
+
+    pkg_url=$url/Board_Pkg_files/THOR
+    if [[ $(validate_url $pkg_url) == 'true' ]]; then
+    	mkcd THOR
+        wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$pkg_url/Signed/ABPROD-SRT"
+	mkcd Facebook
+	wget --no-check-certificate -l1 -nd -r --no-parent -A 'BCM95750[2|4|8]-*.pkg' "$pkg_url/Signed/ABPROD-SRT/Facebook"
+	cd ../..
+    fi
+
 
     if [ "$wh" != "" ]; then
         mkdir wh
@@ -151,13 +174,10 @@ function get_sit(){
     tar -xzvf bnxt_en-*.tar.gz
     #rm bnxt_en-*.tar.gz
 
-    wget --no-check-certificate -l1 -nd -r --no-parent -A 'bnxt_re-*.tar.gz'   "$url/Linux_Driver/RoCE_Driver"
-    tar -xzvf bnxt_re-*.tar.gz
-
-    #wget --no-check-certificate "$url/decode_coredump/Linux/decode_coredump"
-    #chmod a+x decode_coredump
-    #wget --no-check-certificate "$url/decode_coredump/Linux/decode_nvram"
-    #chmod a+x decode_nvram
+    wget --no-check-certificate "$url/decode_coredump/THB_A/Linux/decode_coredump"
+    chmod a+x decode_coredump
+    wget --no-check-certificate "$url/decode_coredump/THB_A/Linux/decode_nvram"
+    chmod a+x decode_nvram
 
 
 }
@@ -190,7 +210,9 @@ if [ "$list_rel" != "" ]; then
 elif [ "$sit_rel" != "" ]; then
     f1=$(echo $sit_rel | cut -d'.' -f1)
     f2=$(echo $sit_rel | cut -d'.' -f2)
-    sit_dir="${sit_dir}${f1}.${f2}"
+    f3=$(echo $sit_rel | cut -d'.' -f3)
+#    sit_dir="${sit_dir}${f1}.${f2}.${f3}"
+#    sit_dir="${sit_dir}${f1}.${f2}"
     get_sit $sit_dir $sit_rel
 #    exit 1
 else

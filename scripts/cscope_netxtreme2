@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd /Users/bpeabody/git/netxtreme2
+find . -name "*.c" -o -name "*.h" -o -name "*.cpp" > cscope.files
+cscope -bqk

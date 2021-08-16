@@ -76,6 +76,9 @@ if [ "$signed" = true ]; then
     args="$args CRID=0001"
 fi
 
+# Temporary hack to disable SPDM
+#args="$args SUPPORT_SPDM=0"
+
 case $2 in
     debug)
         args="$args debug"
