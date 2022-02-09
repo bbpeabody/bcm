@@ -4,14 +4,13 @@ sessions=("bcm1")
 vdi_vegas="bp892475@lvnvda3087.lvn.broadcom.net"
 vdi_durham="bp892475@ashvda3390.ash.broadcom.net"
 thor_path="/projects/cpxsw_dev/bpeabody/netxtreme/main/Cumulus/firmware/THOR/"
-windows=("local" \
+windows=("local1" \
+         "local2" \
          "bldr" \
          "vdi-vegas" \
          "vdi-durham" \
-         "shaper" \
-         "domino" \
-         "rail" \
-         "stile" \
+         "grinder" \
+         "lathe" \
          "tiger")
 
 wait_for_text()
@@ -50,8 +49,8 @@ for session in ${sessions[@]}; do
         for pane in {0..3}; do
             tmux selectp -t $pane
             case $win in
-                "local")
-                    tmux send-keys "cdthor" C-m
+                "local1" | "local2")
+                    tmux send-keys "cd ~" C-m
                     tmux send-keys "reset" C-m
                     ;;
                 "bldr")
@@ -82,7 +81,8 @@ for session in ${sessions[@]}; do
                     tmux send-keys "cd $thor_path" C-m
                     tmux send-keys "clear" C-m
                     ;;
-                "shaper" | "domino" | "rail" | "stile" | "tiger")
+                #"shaper" | "domino" | "rail" | "stile" | "tiger")
+                *)
                     tmux send-keys "ssh $win -o 'PermitLocalCommand yes' -o 'LocalCommand tmux wait-for -S cmd-done'" C-m
                     gtimeout 5 tmux wait-for cmd-done || { echo "Timed out waiting for ssh $win" && break; }
                     ;;

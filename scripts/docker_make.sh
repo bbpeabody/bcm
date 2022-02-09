@@ -59,7 +59,7 @@ case $1 in
         else
             cmd="./make_thor_dual_pkg.sh"
         fi
-        args="RV=B"
+        args="RV=B TRUFLOW=yes ENABLE_FWCLI=1"
         ;;
     chimp)
         build_dir=$chimp_dir

@@ -52,7 +52,7 @@ fi
 build_tools="$HOME/build_tools"
 if [ ! -d $build_tools ]; then
     echo "Creating directory $build_tools..."
-    mkdir $build_tools || exit 1
+    mkdir -p $build_tools || exit 1
 fi
 
 #
@@ -69,29 +69,34 @@ fi
 # Check for tools on the host system.  If not found, retrieve them from users VDI instance and
 # install them.
 #
-host_ccx="$build_tools/ccxsw_tools"
+host_ccx="$build_tools/vdi/ccxsw_tools"
 rmt_ccx="/projects/ccxsw_tools"
-if [ ! -d $host_ccx ]; then
-    echo "Creating directory $host_ccx..."
-    mkdir $host_ccx || exit 1
-fi
-required_tools=( \
-    mentor_graphics/mgc-2018.070 \
-    sbl_tools \
-    contrib \
-    coverity/2019.03/cov-analysis-linux64-2019.03 \
+
+# Associative array: [source_path_on_vdi]=dest_path_on_host
+src_paths=( \
+    $rmt_ccx/mentor_graphics/mgc-2018.070 \
+    $rmt_ccx/sbl_tools \
+    $rmt_ccx/contrib \
+    $rmt_ccx/coverity/2019.03/cov-analysis-linux64-2019.03 \
 )
-for tool in ${required_tools[@]}; do
-    host_tool="$host_ccx/$tool"
-    if [ ! -d $host_tool ]; then
-        echo "Creating directory $host_tool..."
-        mkdir -p $host_tool || exit 1
-        rmt_tool="$rmt_ccx/$tool"
-        echo "Copying $host_tool from VDI..."
-        ssh $uservdi@$hostvdi "   tmp=\`mktemp\` \
-                               && tar -C $rmt_tool -czf \$tmp . \
-                               && cat \$tmp \
-                               && rm \$tmp" | tar -C $host_tool -xzf - 
+dst_paths=( \
+    $host_ccx/mentor_graphics/mgc-2018.070 \
+    $host_ccx/sbl_tools \
+    $host_ccx/contrib \
+    $host_ccx/coverity/2019.03/cov-analysis-linux64-2019.03 \
+)
+for i in "${!src_paths[@]}"; do
+    src="${src_paths[$i]}"
+    dst="${dst_paths[$i]}"
+    if [ ! -d $dst ]; then
+        echo "Creating directory $dst..."
+        mkdir -p $dst || exit 1
+        #rmt_tool="$rmt_ccx/$tool"
+        echo "Copying $dst from VDI..."
+        ssh $uservdi@$hostvdi "tmp=\`mktemp\`; \
+                               tar -C $src -czf \$tmp .;\
+                               cat \$tmp; \
+                               rm \$tmp;" | tar -C $dst -xzf - 
     fi
 done
 

@@ -68,6 +68,10 @@ done
 # MacOS Catalina uses a different path for the user homes
 mac_os_ver=`sw_vers -productVersion`
 case "$mac_os_ver" in
+ 11.6*)
+   # Big Sur
+   volume_root=/System/Volumes/Data/Users
+   ;;
  10.15*)
    # MacOS Catalina
    volume_root=/System/Volumes/Data/Users
