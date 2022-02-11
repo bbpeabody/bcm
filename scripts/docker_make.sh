@@ -116,23 +116,20 @@ case $2 in
         ;;
 esac
 
+if [ "$signed" = true ] ; then
+    args="$args < /sign.txt"
+fi
 if [ "$cov" = true ] ; then
     # Do a build and generate coverity meta-data
     args="build '$cmd $args'"
     cmd="$cov_script"
 fi
-if [ "$signed" = true ] ; then
-    signed_input="cat $signed_pwd"
-else
-    signed_input="cat /dev/null"
-fi
 
 pushd $docker_dir &> /dev/null
 time \
-$signed_input | \
-     ./run \
-         --vdiuser $signed_user \
-         --cmd /bin/bash \
-         -- \
-         -c "cd $build_dir && $cmd $args"
+  ./run \
+    --vdiuser $signed_user \
+    --cmd /bin/bash \
+    -- \
+    -c "cd $build_dir && $cmd $args"
 popd &> /dev/null

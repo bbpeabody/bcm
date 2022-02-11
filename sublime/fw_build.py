@@ -5,6 +5,7 @@ import subprocess
 import threading
 import os
 import re
+import signal
 
 class FwBuildCommand(sublime_plugin.WindowCommand):
 
@@ -31,6 +32,7 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
         if kill:
             if self.proc:
                 self.killed = True
+                self.proc.communicate(input=b'\x03')
                 self.proc.terminate()
             return
 
@@ -90,6 +92,7 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
             raise ValueError(error_msg)
         self.proc = subprocess.Popen(
             args,
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=self.working_dir
@@ -102,12 +105,11 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
         ).start()
 
     def read_handle(self, handle):
-        chunk_size = 2 ** 13
+        chunk_size = 2 ** 10
         out = b''
         while True:
             try:
                 data = os.read(handle.fileno(), chunk_size)
-                #data = os.readline(handle.fileno())
                 # If exactly the requested number of bytes was
                 # read, there may be more data, and the current
                 # data may contain part of a multibyte char
@@ -136,7 +138,7 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
                 break
 
     def queue_write(self, text):
-        sublime.set_timeout(lambda: self.do_write(text), 1)
+        sublime.set_timeout(lambda: self.do_write(text), 30)
 
     def do_write(self, text):
         text = self.translate_file_paths(text)

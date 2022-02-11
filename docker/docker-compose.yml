@@ -25,6 +25,7 @@ services:
             - type: volume
               source: git
               target: /home/${user}/git
+            - ~/sign.txt:/sign.txt
         hostname: bldr
         working_dir: /home/${user}/git
         user: ${user}
