@@ -23,7 +23,7 @@ done
 #
 # Check the environment and make sure all variables are defined
 #
-required_env=( uservdi hostvdi user group uid gid volume_root )
+required_env=( uservdi hostvdi user group uid gid volume_root volume_git )
 for e in ${required_env[@]}; do
     if [ -z ${!e} ]; then
         echo "ERROR: Requires environment variable '$e'. Only run this script with 'run --rebuild'."

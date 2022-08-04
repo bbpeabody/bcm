@@ -39,6 +39,8 @@ RUN yum update -y \
     scl-utils \
     devtoolset-7 \
     elfutils-libelf-devel \
+    doxygen \
+    lcov \
 && yum clean all
 
 # Build needs cmake3 but calls cmake

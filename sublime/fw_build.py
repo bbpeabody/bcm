@@ -42,7 +42,7 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
         except KeyError as err:
             sublime.error_message("You need to open a file, so I know what repo you want to build.")
             raise err
-
+        print(self.working_dir)
         #working_dir = "/"
 
         # A lock is used to ensure only one thread is
@@ -61,6 +61,10 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
             settings.set(
                 'result_file_regex',
                 r'^(\S+):(\d+):(\d+):\s*(.*)'
+            )
+            settings.set(
+                'syntax',
+                'Packages/ANSI.sublime-syntax'
             )
             #settings.set(
             #    'result_line_regex',
@@ -141,6 +145,7 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
         sublime.set_timeout(lambda: self.do_write(text), 30)
 
     def do_write(self, text):
+        text = remove_ansi_ctrl(text)
         text = self.translate_file_paths(text)
         with self.panel_lock:
             self.panel.run_command('append', {'characters': text})
@@ -210,3 +215,18 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
                 raise ValueError("Unsupported chip {chip}".format(chip=self.chip))
         return self._local_make_path
 
+
+# 7-bit C1 ANSI sequences
+ansi_escape = re.compile(r'''
+    \x1B  # ESC
+    (?:   # 7-bit C1 Fe (except CSI)
+        [@-Z\\-_]
+    |     # or [ for CSI, followed by a control sequence
+        \[
+        [0-?]*  # Parameter bytes
+        [ -/]*  # Intermediate bytes
+        [@-~]   # Final byte
+    )
+''', re.VERBOSE)
+def remove_ansi_ctrl(text):
+    return ansi_escape.sub('', text)

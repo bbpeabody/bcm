@@ -59,7 +59,7 @@ case $1 in
         else
             cmd="./make_thor_dual_pkg.sh"
         fi
-        args="RV=B TRUFLOW=yes ENABLE_FWCLI=1"
+        args="RV=B TRUFLOW=no"
         ;;
     chimp)
         build_dir=$chimp_dir
@@ -84,6 +84,7 @@ case $2 in
         args="$args debug"
         ;;
     release)
+        #args="$args ENABLE_FWCLI=1 release"
         args="$args release"
         ;;
     all)

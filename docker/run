@@ -68,6 +68,10 @@ done
 # MacOS Catalina uses a different path for the user homes
 mac_os_ver=`sw_vers -productVersion`
 case "$mac_os_ver" in
+ 12.4*)
+   # Monterrey
+   volume_root=/System/Volumes/Data/Users
+   ;;
  11.6*)
    # Big Sur
    volume_root=/System/Volumes/Data/Users
@@ -86,10 +90,12 @@ case "$mac_os_ver" in
    ;;
 esac
 
+volume_git=/Volumes/Repos/git
 # These variables are used when building image and running container
 export uservdi
 export user
 export volume_root
+export volume_git
 
 if $rebuild || ! docker images | grep -e '^docker_bldr\s\+latest' &> /dev/null; then
     # Either the user passed in the --rebuild option or the image doesn't exist, so

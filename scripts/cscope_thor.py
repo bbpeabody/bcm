@@ -68,7 +68,7 @@ def repo_root():
     """
     Return the root directory of the repo. git binary must be installed on system.
     """
-    cmd = GIT_BIN + ['rev-parse', '--show-toplevel']
+    cmd = GIT_BIN + ['rev-parse', '--path-format=relative', '--show-toplevel']
     try:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     except FileNotFoundError:
@@ -77,7 +77,9 @@ def repo_root():
     p.wait(5)
     output = p.stdout.read().decode()
     if p.returncode == 0:
-        return output.strip()
+        rel_path = output.strip()
+        pwd = os.getenv('PWD')
+        return os.path.normpath(os.path.join(pwd, rel_path))
     print("ERROR: Not in a git repo.")
     sys.exit(1)
 
@@ -112,7 +114,7 @@ def get_dependencies(thor_dir, files):
         for word in words:
             for ext in SOURCE_EXT:
                 if word.endswith(f".{ext}"):
-                    deps.add(os.path.abspath(os.path.join(thor_dir, word)))
+                    deps.add(os.path.normpath(os.path.join(thor_dir, word)))
                     break
     return deps
 
