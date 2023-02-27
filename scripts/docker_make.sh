@@ -132,5 +132,5 @@ time \
     --vdiuser $signed_user \
     --cmd /bin/bash \
     -- \
-    -c "cd $build_dir && $cmd $args"
+    -c "export EC_SIGN=yes;sleep 5 && cd $build_dir && $cmd $args"
 popd &> /dev/null

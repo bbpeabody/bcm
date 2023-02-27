@@ -3,7 +3,7 @@
 usage="
 usage: run [{-v|--vdiuser} <VDIUSERNAME>] [{-h|--vdihost} <VDIHOST>] [{-u|--user} <USER>] [{-g|--group} <GROUP>] [{-U|--uid} <UID>] [{-G|--gid} <GID>] [--rebuild] [-c|--cmd <CMD>]"
 uservdi=bp892475
-hostvdi=ashvda3390.ash.broadcom.net
+hostvdi=lvnvda3087.lvn.broadcom.net
 user=$(id -un)
 group=$(id -gn)
 uid=$(id -u)
@@ -68,6 +68,14 @@ done
 # MacOS Catalina uses a different path for the user homes
 mac_os_ver=`sw_vers -productVersion`
 case "$mac_os_ver" in
+ 13.*)
+   # Ventura
+   volume_root=/System/Volumes/Data/Users
+   ;;
+ 12.5*)
+   # Monterrey
+   volume_root=/System/Volumes/Data/Users
+   ;;
  12.4*)
    # Monterrey
    volume_root=/System/Volumes/Data/Users

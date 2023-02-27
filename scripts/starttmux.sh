@@ -2,7 +2,7 @@
 
 sessions=("bcm1")
 vdi_vegas="bp892475@lvnvda3087.lvn.broadcom.net"
-vdi_durham="bp892475@ashvda3390.ash.broadcom.net"
+vdi_durham="bp892475@accvda1784.acc.broadcom.net"
 thor_path="/projects/cpxsw_dev/bpeabody/netxtreme/main/Cumulus/firmware/THOR/"
 windows=("local1" \
          "local2" \

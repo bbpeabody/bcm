@@ -126,6 +126,7 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
                 # timeout gets the value of out right now,
                 # rather than a future (mutated) version
                 self.queue_write(out.decode(self.encoding))
+                print(out)
                 if data == b'':
                     raise IOError('EOF')
                 out = b''
@@ -197,7 +198,11 @@ class FwBuildCommand(sublime_plugin.WindowCommand):
             parts = self.working_dir.split(self.netxtreme_path)
             # Translate /Users/bpeabody (macOS) to /home/bpeabody (linux)
             # It's assumed that the netxtreme repo is cloned to your home directory
-            self._docker_netxtreme_path = parts[0].replace("/Users/", "/home/") + self.netxtreme_path + '/'
+            if "Volumes" in parts[0]:
+                self._docker_netxtreme_path = parts[0].replace("/Volumes/Repos/", "/home/bpeabody/")
+            else:
+                self._docker_netxtreme_path = parts[0].replace("/Users/", "/home/")
+            self._docker_netxtreme_path += self.netxtreme_path + '/'
         return self._docker_netxtreme_path
 
     @property
