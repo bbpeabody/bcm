@@ -7,8 +7,20 @@
 #
 
 # Set these to your username and VDI URL
-USER = "bp892475"
+USER = "bpeabody"
+VDIUSER = "bp892475"
 VDI = "lvnvda3087.lvn.broadcom.net"
+
+# vagrant-disksize plugin is needed to resize the storage 
+# Installation - vagrant plugin install vagrant-disksize
+unless Vagrant.has_plugin?("vagrant-disksize")
+  raise Vagrant::Errors::VagrantError.new "vagrant-disksize plugin is not installed."
+end
+# vagrant-vbguest plugin automatically install the host's VirtualBox Guest Additions 
+# on the guest system.  Installation - vagrant plugin install vagrant-vbguest
+#unless Vagrant.has_plugin?("vagrant-vbguest")
+#  raise Vagrant::Errors::VagrantError.new "vagrant-vbguest plugin is not installed."
+#end
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -20,8 +32,9 @@ Vagrant.configure("2") do |config|
   config.vm.box = "centos/7"
   config.vm.box_check_update = false
   config.vm.define "bldr"
+  config.disksize.size = '200GB'
 
-  # Use VirtualBox as the provider(hypervisor).  Allocate 8 CPU cores and 8G RAM.
+  # Use VirtualBox as the provider(hypervisor).  Allocate 8 CPU cores and 16G RAM.
   config.vm.provider "virtualbox" do |vb|
     vb.name = "bldr"
     vb.cpus = 8
@@ -41,26 +54,22 @@ Vagrant.configure("2") do |config|
     #vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
   end
   
-  # vagrant-vbguest plugin automatically install the host's VirtualBox Guest Additions 
-  # on the guest system.  Installation - vagrant plugin install vagrant-vbguest
-  if Vagrant.has_plugin?("vagrant-vbguest")
-    config.vbguest.auto_update = true
-  end
+  #config.vbguest.auto_update = true
 
   # Configure static IP on private host NAT network.  This can be whatever you want as long
   # as it's a non-routable IP - i.e. 192.168.0.0/16.  This IP will only be visible to the 
   # host. VirtualBox provides a private NAT network.
-  config.vm.network "private_network", ip: "192.168.33.10"
+  config.vm.network "private_network", ip: "192.168.56.10"
   config.ssh.forward_agent = true
 
   # This will configure the nfsd server on the host and mount the nfs share on the guest
   # Do not use UDP transport. Make hangs whe you try to use UDP.
-  config.vm.synced_folder "~/git", "/git", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
+  config.vm.synced_folder "~/git", "/git", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime', 'wsize=32768', 'rsize=32768']
   # MacOS protects the ~/Downloads folder.  In order for the NFS daemon to access it, you need
   # to System Preferences > Security & Privacy > Privacy > Full Disk Access.  Click on the plus
   # sign to add a program.  Navigate to /sbin/nfsd (cmd+shift+. to see hidden files and folders).
   # Files in ~/Downloads should now show up at /downloads on vagrant machine.
-  config.vm.synced_folder "~/Downloads", "/downloads", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
+  #config.vm.synced_folder "~/Downloads", "/downloads", type: "nfs", mount_options: ['rw', 'nosuid', 'proto=tcp', 'resvport', 'nolock', 'async', 'noatime']
   
   # Set the guest time to match the host.
   config.vm.provision "shell", inline: "sudo rm /etc/localtime && sudo ln -s /usr/share/zoneinfo/America/New_York /etc/localtime", run: "always"
@@ -68,19 +77,28 @@ Vagrant.configure("2") do |config|
   # All provisioning below is only run once.  It may be run again using --provision option
   # Copy some config files to the guest
   # ZSH shell/environment configuration
-  config.vm.provision "file", source: "zshrc", destination: ".zshrc"
-  config.vm.provision "file", source: "zshenv", destination: ".zshenv"
+  config.vm.provision "file", source: "~/.zshrc", destination: ".zshrc"
+  config.vm.provision "file", source: "~/.zshenv", destination: ".zshenv"
   # VIM editor configuration
-  config.vm.provision "file", source: "vimrc", destination: ".vimrc"
+  config.vm.provision "file", source: "~/.vimrc", destination: ".vimrc"
   # Powerlevel10k ZSH plugin configuration
-  config.vm.provision "file", source: "p10k.zsh", destination: ".p10k.zsh"
+  config.vm.provision "file", source: "~/.p10k.zsh", destination: ".p10k.zsh"
+  config.vm.provision "file", source: "~/.zsh", destination: ".zsh"
   # Local git configuration.  At a minimum needs your name and email configured
   config.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
-
+  config.vm.provision "file", source: "~/.gitignore", destination: ".gitignore"
   # Copy ssh key to VM
-  config.vm.provision "file", source: "~/.ssh/id_rsa", destination: ".ssh/id_rsa"
-  
+  config.vm.provision "file", source: "~/.ssh", destination: ".ssh"
+  # Copy build tools to VM
+  #config.vm.provision "shell", inline: "sudo rm -fr /projects && sudo mkdir -p /projects && sudo chown vagrant:vagrant /projects"
+  #config.vm.provision "file", source: "~/build_tools/vdi/ccxsw_tools.tgz", destination: "/projects/ccxsw_tools.tgz"
+  #config.vm.provision "shell", inline: "tar -C /projects -xf /projects/ccxsw_tools.tgz"
+  #config.vm.provision "shell", inline: "sudo chown --recursive vagrant:vagrant /projects"
+
   # Run the bootstrap script.  This only runs once after the first call to vagrant up
   # after a vagrant destroy.  It can be run again using --provision option.
-  config.vm.provision "shell", path: "bootstrap.sh", env: { "USER" => USER, "VDI" => VDI }
+  config.vm.provision "shell", path: "bootstrap.sh", env: { "USER" => USER, "VDIUSER" => VDIUSER, "VDI" => VDI }
+  
+  # Mount the data storage
+  config.vm.provision "shell", inline: "sudo mount /dev/sda2 /mnt/sda2", run: "always"
 end

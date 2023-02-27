@@ -10,12 +10,13 @@ RUN yum update -y \
     vim \
     cmake3 \
     gcc gcc-c++ \
-    git224-all \
     glibc.i686 glibc-static \
     java-1.8.0-openjdk-headless \
     kernel-devel \
     make \
     perl-WWW-Mechanize \
+    perl-JSON \
+    perl-XML-Writer \
     tcl-devel \
     npm \
     python-pip \
@@ -41,6 +42,8 @@ RUN yum update -y \
     elfutils-libelf-devel \
     doxygen \
     lcov \
+&& yum install -y https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm \
+&& yum install -y git \
 && yum clean all
 
 # Build needs cmake3 but calls cmake

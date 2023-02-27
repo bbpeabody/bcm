@@ -77,13 +77,13 @@ src_paths=( \
     $rmt_ccx/mentor_graphics/mgc-2018.070 \
     $rmt_ccx/sbl_tools \
     $rmt_ccx/contrib \
-    $rmt_ccx/coverity/2019.03/cov-analysis-linux64-2019.03 \
+    $rmt_ccx/coverity/2022.06/Linux-64 \
 )
 dst_paths=( \
     $host_ccx/mentor_graphics/mgc-2018.070 \
     $host_ccx/sbl_tools \
     $host_ccx/contrib \
-    $host_ccx/coverity/2019.03/cov-analysis-linux64-2019.03 \
+    $host_ccx/coverity/2022.06/Linux-64 \
 )
 for i in "${!src_paths[@]}"; do
     src="${src_paths[$i]}"
