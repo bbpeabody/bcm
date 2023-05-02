@@ -20,10 +20,12 @@ services:
             - type: volume
               source: build_tools
               target: /mnt/build_tools
-              read_only: true
             - type: volume
               source: git
               target: /home/${user}/git
+            - type: volume
+              source: defects
+              target: /home/${user}/defects
             - ~/sign.txt:/sign.txt
         hostname: bldr
         working_dir: /home/${user}/git
@@ -42,8 +44,8 @@ volumes:
             #o: bind
             #device: /Users/${user}/.ssh
             type: nfs
-              #o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
-            o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
+            o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
+              #o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
             device: :${volume_root}/${user}/.ssh
     build_tools:
         driver: local
@@ -52,8 +54,8 @@ volumes:
             #o: bind
             #device: /Users/${user}/build_tools
             type: nfs
-              #o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
-            o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
+              #o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3
             #o: addr=host.docker.internal,ro,nolock,hard,nointr,nfsvers=3,wsize=1048576,rsize=1048576
             device: :${volume_root}/${user}/build_tools
     git:
@@ -63,6 +65,12 @@ volumes:
             #o: bind
             #device: /Users/${user}/git
             type: nfs
-              #o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
-            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
+            #o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3
             device: :${volume_git}
+    defects:
+        driver: local
+        driver_opts:
+            type: nfs
+            o: addr=host.docker.internal,rw,nolock,hard,nointr,nfsvers=3,wsize=131072,rsize=131072
+            device: :${volume_root}/${user}/defects
