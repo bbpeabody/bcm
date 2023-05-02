@@ -105,7 +105,7 @@ export user
 export volume_root
 export volume_git
 
-if $rebuild || ! docker images | grep -e '^docker_bldr\s\+latest' &> /dev/null; then
+if $rebuild || ! docker images | grep -e '^docker-bldr\s\+latest' &> /dev/null; then
     # Either the user passed in the --rebuild option or the image doesn't exist, so
     # call the build script to build the image.
     export hostvdi
